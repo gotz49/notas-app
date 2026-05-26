@@ -12,23 +12,6 @@
   padding: var(--space-sm) var(--space-lg);
   border-bottom: 1px solid var(--color-line);
 }
-.toggle {
-  display: flex;
-  gap: var(--space-xs);
-}
-.tab {
-  background: none;
-  border: 1px solid transparent;
-  border-radius: var(--radius);
-  padding: 0.3rem 0.7rem;
-  font-size: 0.9rem;
-  color: var(--color-ink-soft);
-}
-.tabActive {
-  background: var(--color-surface);
-  border-color: var(--color-line);
-  color: var(--color-ink);
-}
 .body {
   flex: 1;
   overflow-y: auto;
@@ -51,52 +34,7 @@
   letter-spacing: -0.02em;
   margin-bottom: var(--space-md);
 }
-.titleInput:focus {
-  outline: none;
-}
-.contentInput {
-  width: 100%;
-  min-height: 55vh;
-  border: none;
-  background: none;
-  resize: none;
-  font-size: 1.05rem;
-  line-height: 1.7;
-}
-.contentInput:focus {
-  outline: none;
-}
-/* Estilos del Markdown renderizado en la vista previa */
-.preview :is(h1, h2, h3) { font-family: var(--font-display); margin: 1.2em 0 0.4em; }
-.preview h1 { font-size: 2rem; }
-.preview h2 { font-size: 1.5rem; }
-.preview p { margin: 0.6em 0; }
-.preview ul, .preview ol { margin: 0.6em 0 0.6em 1.4em; }
-.preview code {
-  font-family: var(--font-mono);
-  background: var(--color-accent-soft);
-  padding: 0.1em 0.35em;
-  border-radius: 4px;
-  font-size: 0.9em;
-}
-.preview pre {
-  background: var(--color-surface);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius);
-  padding: var(--space-md);
-  overflow-x: auto;
-}
-.preview pre code { background: none; padding: 0; }
-.preview blockquote {
-  border-left: 3px solid var(--color-accent);
-  padding-left: var(--space-md);
-  color: var(--color-ink-soft);
-  margin: 0.8em 0;
-}
-.preview a { color: var(--color-accent); }
-.preview table { border-collapse: collapse; margin: 0.8em 0; }
-.preview th, .preview td { border: 1px solid var(--color-line); padding: 0.4em 0.8em; }
-
+.titleInput:focus { outline: none; }
 .placeholder {
   flex: 1;
   display: grid;
