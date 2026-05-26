@@ -1,0 +1,21 @@
+# Dependencias
+node_modules
+
+# Build de produccion
+dist
+dist-ssr
+
+# Variables de entorno (NUNCA subir las claves reales a GitHub)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / SO
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea

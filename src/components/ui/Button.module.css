@@ -1,0 +1,46 @@
+/* Estilos del boton. Los ".module.css" generan clases con nombre unico
+   automaticamente, asi nunca chocan con las de otro componente. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Variante "primaria": el boton de accion principal */
+.primary {
+  background-color: var(--color-accent);
+  color: #fff;
+}
+.primary:hover:not(:disabled) {
+  background-color: #80371b;
+}
+
+/* Variante "ghost": discreto, sin relleno */
+.ghost {
+  background-color: transparent;
+  color: var(--color-ink-soft);
+  border-color: var(--color-line);
+}
+.ghost:hover:not(:disabled) {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+}
+
+/* Variante "danger": acciones destructivas (borrar) */
+.danger {
+  background-color: transparent;
+  color: var(--color-danger);
+  border-color: transparent;
+}
+.danger:hover:not(:disabled) {
+  background-color: #f6e7e7;
+}

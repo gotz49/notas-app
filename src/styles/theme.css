@@ -1,0 +1,33 @@
+/* ============================================================
+   TOKENS DE DISENO  (variables CSS reutilizables)
+   ------------------------------------------------------------
+   Definir colores, fuentes y espaciados como variables permite
+   cambiar el look de toda la app tocando un solo lugar.
+   Por ejemplo, para un modo oscuro, solo redefinis estas variables.
+   ============================================================ */
+:root {
+  /* Paleta: papel calido + tinta. Sobria, no el tipico look "IA". */
+  --color-bg: #f4f1ea;          /* fondo papel */
+  --color-surface: #fbfaf6;     /* tarjetas / paneles */
+  --color-ink: #20201d;         /* texto principal (tinta) */
+  --color-ink-soft: #6b675e;    /* texto secundario */
+  --color-line: #e3ddd0;        /* bordes / separadores */
+  --color-accent: #9c4221;      /* terracota: acento, botones */
+  --color-accent-soft: #f0e3dc;
+  --color-danger: #a02c2c;
+
+  /* Tipografias (se cargan desde Google Fonts en global.css) */
+  --font-display: "Fraunces", Georgia, serif;  /* titulos */
+  --font-body: "Newsreader", Georgia, serif;   /* cuerpo de texto */
+  --font-mono: "SFMono-Regular", Consolas, monospace;
+
+  /* Espaciados consistentes */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+
+  --radius: 6px;
+  --shadow: 0 1px 2px rgba(32, 32, 29, 0.06), 0 6px 20px rgba(32, 32, 29, 0.05);
+}
