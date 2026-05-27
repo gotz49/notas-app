@@ -12,10 +12,6 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-label="Cambiar tema"
       title="Cambiar tema"
-      style={{
-        padding: "0.5rem 0.7rem",
-        justifyContent: "center",
-      }}
     >
       {theme === "dark" ? "☀" : "☾"}
     </Button>
