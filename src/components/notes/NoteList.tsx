@@ -8,6 +8,7 @@ import type { Note } from "../../types";
 import { Button } from "../ui/Button";
 import { NoteListItem } from "./NoteListItem";
 import styles from "./NoteList.module.css";
+import { ThemeToggle } from "../ui/ThemeToggle";
 
 type Props = {
   notes: Note[];
@@ -30,7 +31,10 @@ export function NoteList({
     <aside className={styles.sidebar}>
       <div className={styles.header}>
         <span className={styles.brand}>Notas</span>
-        <Button variant="ghost" onClick={onCreate}>+ Nueva</Button>
+        <div className={styles.headerActions}>
+          <ThemeToggle />
+          <Button variant="ghost" onClick={onCreate}>+ Nueva</Button>
+        </div>
       </div>
 
       <div className={styles.list}>

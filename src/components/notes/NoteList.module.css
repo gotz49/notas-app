@@ -75,3 +75,18 @@
   font-size: 0.78rem;
   color: var(--color-ink-soft);
 }
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+/* Fuerza a TODOS los botones del header a la misma altura,
+   sin importar si tienen texto o un emoji. */
+.headerActions > button {
+  height: 36px;
+  padding-top: 0;
+  padding-bottom: 0;
+  justify-content: center;
+}
