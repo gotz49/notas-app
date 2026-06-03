@@ -1,0 +1,30 @@
+/* ============================================================
+   Layout raiz de la app + comportamiento responsivo
+   ------------------------------------------------------------
+   Desktop (>768px): sidebar + editor lado a lado.
+   Movil (<=768px): un solo panel a pantalla completa. La clase
+   .showEditor (que agrega App.tsx segun mobileView) decide cual
+   de los dos se ve.
+   ============================================================ */
+.app {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .app > :first-child {
+    width: 100%;
+    flex-shrink: 0;
+  }
+  .app > :last-child {
+    display: none;
+  }
+  .showEditor > :first-child {
+    display: none;
+  }
+  .showEditor > :last-child {
+    display: flex;
+    width: 100%;
+  }
+}

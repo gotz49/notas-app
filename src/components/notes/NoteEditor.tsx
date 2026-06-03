@@ -19,9 +19,10 @@ type Props = {
   note: Note | null;
   onChange: (id: string, changes: NoteUpdate) => void;
   onDelete: (id: string) => void;
+  onBack?: () => void; // volver a la lista (solo visible en movil)
 };
 
-export function NoteEditor({ note, onChange, onDelete }: Props) {
+export function NoteEditor({ note, onChange, onDelete, onBack }: Props) {
   const [title, setTitle] = useState("");
   const [showHelp, setShowHelp] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -50,8 +51,13 @@ export function NoteEditor({ note, onChange, onDelete }: Props) {
   return (
     <main className={styles.editor}>
       <div className={styles.toolbar}>
-        <Button variant="ghost" onClick={() => setShowHelp(true)}>Atajos</Button>
-        <Button variant="danger" onClick={() => onDelete(note.id)}>Borrar</Button>
+        {/* Izquierda: volver a la lista (solo en movil, via .backBtn) */}
+        <Button variant="ghost" className={styles.backBtn} onClick={onBack}>← Notas</Button>
+        {/* Derecha: acciones de la nota */}
+        <div style={{ display: "flex", gap: "var(--space-sm)" }}>
+          <Button variant="ghost" onClick={() => setShowHelp(true)}>Atajos</Button>
+          <Button variant="danger" onClick={() => onDelete(note.id)}>Borrar</Button>
+        </div>
       </div>
 
       <div className={styles.body}>

@@ -42,3 +42,13 @@
   color: var(--color-ink-soft);
   font-style: italic;
 }
+
+/* Boton "volver a la lista": oculto en desktop, visible solo en movil. */
+.backBtn {
+  display: none;
+}
+@media (max-width: 768px) {
+  .backBtn {
+    display: inline-flex;
+  }
+}
