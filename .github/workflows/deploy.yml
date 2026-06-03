@@ -1,0 +1,60 @@
+# ============================================================
+#  Deploy automatico a GitHub Pages
+# ------------------------------------------------------------
+#  Cada push a "main" recompila la app y publica dist/ en Pages.
+#  No requiere ninguna sesion de Codespace abierta: corre en los
+#  servidores de GitHub. Las claves de Supabase las toma Vite del
+#  archivo ".env.production" (son publicas por diseno; la seguridad
+#  real la dan las politicas RLS en la base).
+# ============================================================
+name: Deploy a GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # permite lanzarlo a mano desde la pestana Actions
+
+# Permisos que necesita la accion oficial de Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Si se encadenan varios pushes, deja correr el ultimo y cancela los previos.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build de produccion
+        run: npm run build # Vite lee las claves de .env.production
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true # habilita Pages automaticamente en la 1ra corrida
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

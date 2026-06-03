@@ -9,6 +9,14 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+# Excepcion: .env.production SI se versiona (solo claves publicas anon,
+# necesarias para el build de GitHub Pages). Ver el archivo para detalles.
+!.env.production
+
+# Artefactos de "tsc -b" (se generan al compilar, no se versionan)
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
 
 # Logs
 *.log
