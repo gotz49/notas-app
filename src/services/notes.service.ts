@@ -7,11 +7,13 @@
 import { supabase } from "../lib/supabase";
 import type { Note, NoteUpdate } from "../types";
 
-// READ: traer todas las notas del usuario, mas nuevas primero.
+// READ: traer todas las notas del usuario. Las fijadas van primero y,
+// dentro de cada grupo, las mas nuevas arriba.
 export async function fetchNotes(): Promise<Note[]> {
   const { data, error } = await supabase
     .from("notes")
     .select("*")
+    .order("pinned", { ascending: false })
     .order("updated_at", { ascending: false });
   if (error) throw error;
   return data ?? [];

@@ -9,8 +9,24 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
   padding: var(--space-sm) var(--space-lg);
   border-bottom: 1px solid var(--color-line);
+}
+/* Grupo de acciones de la derecha. Envuelve a una segunda fila en
+   pantallas angostas en vez de desbordar. */
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+}
+.saveStatus {
+  font-size: 0.8rem;
+  color: var(--color-ink-soft);
+  white-space: nowrap;
 }
 .body {
   flex: 1;

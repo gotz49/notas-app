@@ -24,7 +24,10 @@ export function NoteListItem({ note, active, onSelect }: Props) {
       className={`${styles.item} ${active ? styles.itemActive : ""}`}
       onClick={() => onSelect(note.id)}
     >
-      <div className={styles.itemTitle}>{note.title || "Sin titulo"}</div>
+      <div className={styles.itemTitle}>
+        {note.pinned && <span className={styles.pin} aria-label="Fijada">📌</span>}
+        {note.title || "Sin titulo"}
+      </div>
       <div className={styles.itemDate}>{fecha}</div>
     </button>
   );

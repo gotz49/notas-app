@@ -12,11 +12,12 @@ export type Note = {
   user_id: string;
   title: string;
   content: string;
+  pinned: boolean; // si esta fijada, va siempre arriba de la lista
   created_at: string; // fecha en formato ISO (texto)
   updated_at: string;
 };
 
 // Los campos que el usuario puede editar de una nota.
 // "Partial" significa "todos opcionales": podes actualizar solo el titulo,
-// solo el contenido, o ambos.
-export type NoteUpdate = Partial<Pick<Note, "title" | "content">>;
+// solo el contenido, fijarla/desfijarla, o varios a la vez.
+export type NoteUpdate = Partial<Pick<Note, "title" | "content" | "pinned">>;

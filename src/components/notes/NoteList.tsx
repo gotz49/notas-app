@@ -35,13 +35,19 @@ export function NoteList({
   // Filtra por titulo o contenido, sin distinguir mayusculas. Al contenido
   // le quitamos las etiquetas HTML para no matchear nombres de tags.
   const q = query.trim().toLowerCase();
-  const visibles = q
+  const filtradas = q
     ? notes.filter((n) =>
         (n.title + " " + n.content.replace(/<[^>]*>/g, " "))
           .toLowerCase()
           .includes(q)
       )
     : notes;
+
+  // Las fijadas arriba. El sort de JS es estable, asi que dentro de cada
+  // grupo se respeta el orden por fecha que ya viene de la base.
+  const visibles = [...filtradas].sort(
+    (a, b) => Number(b.pinned) - Number(a.pinned)
+  );
 
   return (
     <aside className={styles.sidebar}>
