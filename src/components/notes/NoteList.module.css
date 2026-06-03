@@ -130,17 +130,36 @@
 .collapseDesktop {
   display: inline-flex;
 }
-
-/* Barra colapsada: riel angosto, centrado, solo en desktop. */
-.collapsed {
-  width: 48px;
-  align-items: center;
-  padding-top: var(--space-md);
+/* Boton de expandir (»): oculto salvo cuando la barra esta colapsada en
+   desktop (se activa en el media query de abajo). */
+.expandBtn {
+  display: none;
+  margin: 0 auto;
 }
 
 @media (max-width: 768px) {
   .collapseDesktop {
     display: none;
+  }
+}
+
+/* Colapso: solo aplica en desktop. En movil la barra se ve siempre completa
+   (la navegacion ahi ya es de un panel a la vez), aunque quede guardada como
+   colapsada en otro dispositivo. */
+@media (min-width: 769px) {
+  .collapsed {
+    width: 48px;
+    align-items: center;
+    padding-top: var(--space-md);
+  }
+  .collapsed .header,
+  .collapsed .search,
+  .collapsed .list,
+  .collapsed .footer {
+    display: none;
+  }
+  .collapsed .expandBtn {
+    display: flex;
   }
 }
 

@@ -31,12 +31,19 @@ export function NoteEditor({ note, onChange, onDelete, onBack }: Props) {
   const [showHelp, setShowHelp] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-  // Visibilidad del panel de keywords. Es preferencia de layout (no se resetea
-  // al cambiar de nota): arranca abierto en desktop y cerrado en movil, y el
-  // boton "Keywords" lo alterna en cualquier tamano.
-  const [showKeywords, setShowKeywords] = useState(
-    () => window.matchMedia("(min-width: 769px)").matches
-  );
+  // Visibilidad del panel de keywords. En desktop es una preferencia de layout
+  // que se recuerda entre sesiones (localStorage) y arranca abierta; en movil
+  // siempre arranca cerrada para ver primero el apunte. No se resetea al
+  // cambiar de nota; el boton "Keywords" la alterna en cualquier tamano.
+  const isDesktop = window.matchMedia("(min-width: 769px)").matches;
+  const [showKeywords, setShowKeywords] = useState(() => {
+    if (!isDesktop) return false;
+    const saved = localStorage.getItem("keywordsOpen");
+    return saved === null ? true : saved === "true";
+  });
+  useEffect(() => {
+    if (isDesktop) localStorage.setItem("keywordsOpen", String(showKeywords));
+  }, [isDesktop, showKeywords]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Cuando cambia la nota seleccionada, sincronizamos los campos locales y

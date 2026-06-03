@@ -4,7 +4,7 @@
 //  Muestra la marca, el boton "nueva nota", la lista de notas y
 //  el pie con el email del usuario + cerrar sesion.
 // ============================================================
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Note } from "../../types";
 import { Button } from "../ui/Button";
 import { NoteListItem } from "./NoteListItem";
@@ -33,8 +33,14 @@ export function NoteList({
   const [query, setQuery] = useState("");
 
   // Barra colapsada (solo desktop): la reduce a un riel angosto para ganar
-  // espacio de lectura. El boton para colapsar/expandir esta oculto en movil.
-  const [collapsed, setCollapsed] = useState(false);
+  // espacio de lectura. Se recuerda entre sesiones via localStorage. El CSS
+  // limita el efecto a desktop (en movil la barra siempre se ve completa).
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem("sidebarCollapsed") === "true"
+  );
+  useEffect(() => {
+    localStorage.setItem("sidebarCollapsed", String(collapsed));
+  }, [collapsed]);
 
   // Filtra por titulo o contenido, sin distinguir mayusculas. Al contenido
   // le quitamos las etiquetas HTML para no matchear nombres de tags.
@@ -53,24 +59,19 @@ export function NoteList({
     (a, b) => Number(b.pinned) - Number(a.pinned)
   );
 
-  // Colapsada: riel angosto con solo el boton para volver a expandir.
-  if (collapsed) {
-    return (
-      <aside className={`${styles.sidebar} ${styles.collapsed}`}>
-        <button
-          className={styles.collapseBtn}
-          onClick={() => setCollapsed(false)}
-          title="Mostrar la lista de notas"
-          aria-label="Mostrar la lista de notas"
-        >
-          »
-        </button>
-      </aside>
-    );
-  }
-
   return (
-    <aside className={styles.sidebar}>
+    <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
+      {/* Boton para expandir: solo visible cuando la barra esta colapsada
+          (en desktop). El CSS lo oculta en el resto de los casos. */}
+      <button
+        className={`${styles.collapseBtn} ${styles.expandBtn}`}
+        onClick={() => setCollapsed(false)}
+        title="Mostrar la lista de notas"
+        aria-label="Mostrar la lista de notas"
+      >
+        »
+      </button>
+
       <div className={styles.header}>
         <span className={styles.brand}>Notas</span>
         <div className={styles.headerActions}>
