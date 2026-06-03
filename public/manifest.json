@@ -1,0 +1,17 @@
+{
+  "name": "Notas",
+  "short_name": "Notas",
+  "description": "App de notas personal con sincronización entre dispositivos",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f4f1ea",
+  "theme_color": "#9c4221",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

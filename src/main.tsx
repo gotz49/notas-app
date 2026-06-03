@@ -14,3 +14,12 @@ createRoot(document.getElementById("root")!).render(
     <App />
   </StrictMode>
 );
+
+// Registra el service worker para que la app sea instalable (PWA).
+// Usamos BASE_URL ("/notas-app/") porque la app se sirve bajo ese subpath
+// en GitHub Pages, no en la raiz del dominio.
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register(import.meta.env.BASE_URL + "sw.js");
+  });
+}
