@@ -17,8 +17,10 @@
   --color-danger: #a02c2c;
 
   /* Tipografias (se cargan desde Google Fonts en global.css) */
-  --font-display: "Fraunces", Georgia, serif;  /* titulos */
-  --font-body: "Newsreader", Georgia, serif;   /* cuerpo de texto */
+  /* IBM Plex Sans: sans-serif limpia y legible, con fallback a la fuente
+     del sistema si no llega a cargar. */
+  --font-display: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;  /* titulos */
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;     /* cuerpo de texto */
   --font-mono: "SFMono-Regular", Consolas, monospace;
 
   /* Espaciados consistentes */
