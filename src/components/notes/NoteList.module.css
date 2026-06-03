@@ -63,6 +63,10 @@
 .itemActive {
   background: var(--color-accent-soft);
   border-color: var(--color-line);
+  color: var(--color-ink);
+}
+.itemActive .itemDate {
+  color: var(--color-ink-soft);
 }
 .itemTitle {
   font-weight: 500;
