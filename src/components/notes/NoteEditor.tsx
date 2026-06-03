@@ -25,11 +25,14 @@ type Props = {
 export function NoteEditor({ note, onChange, onDelete, onBack }: Props) {
   const [title, setTitle] = useState("");
   const [showHelp, setShowHelp] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Cuando cambia la nota seleccionada, sincronizamos el titulo local.
+  // Cuando cambia la nota seleccionada, sincronizamos el titulo local y
+  // cancelamos cualquier confirmacion de borrado pendiente.
   useEffect(() => {
     setTitle(note?.title ?? "");
+    setConfirmDelete(false);
   }, [note?.id]);
 
   // Programa el guardado diferido (debounce).
@@ -54,9 +57,17 @@ export function NoteEditor({ note, onChange, onDelete, onBack }: Props) {
         {/* Izquierda: volver a la lista (solo en movil, via .backBtn) */}
         <Button variant="ghost" className={styles.backBtn} onClick={onBack}>← Notas</Button>
         {/* Derecha: acciones de la nota */}
-        <div style={{ display: "flex", gap: "var(--space-sm)" }}>
+        <div style={{ display: "flex", gap: "var(--space-sm)", alignItems: "center" }}>
           <Button variant="ghost" onClick={() => setShowHelp(true)}>Atajos</Button>
-          <Button variant="danger" onClick={() => onDelete(note.id)}>Borrar</Button>
+          {confirmDelete ? (
+            <>
+              <span className={styles.confirmText}>¿Borrar?</span>
+              <Button variant="danger" onClick={() => onDelete(note.id)}>Sí</Button>
+              <Button variant="ghost" onClick={() => setConfirmDelete(false)}>Cancelar</Button>
+            </>
+          ) : (
+            <Button variant="danger" onClick={() => setConfirmDelete(true)}>Borrar</Button>
+          )}
         </div>
       </div>
 

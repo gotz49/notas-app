@@ -43,6 +43,12 @@
   font-style: italic;
 }
 
+/* Texto de la confirmacion de borrado, junto a los botones Si/Cancelar. */
+.confirmText {
+  font-size: 0.9rem;
+  color: var(--color-ink-soft);
+}
+
 /* Boton "volver a la lista": oculto en desktop, visible solo en movil. */
 .backBtn {
   display: none;

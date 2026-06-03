@@ -19,6 +19,22 @@
   font-weight: 600;
   letter-spacing: -0.02em;
 }
+.search {
+  margin: 0 var(--space-sm) var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-size: 0.9rem;
+}
+.search:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+.search::placeholder {
+  color: var(--color-ink-soft);
+}
 .list {
   flex: 1;
   overflow-y: auto;
