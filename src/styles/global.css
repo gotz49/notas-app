@@ -1,6 +1,5 @@
-/* Carga de tipografias */
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap");
-
+/* Tipografia: usamos la fuente del sistema (San Francisco en Apple, Segoe UI
+   en Windows, Roboto en Android). No se descarga nada: carga instantanea. */
 @import "./theme.css";
 
 /* ---------- Reset minimo ---------- */

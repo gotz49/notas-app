@@ -16,11 +16,12 @@
   --color-accent-soft: #f0e3dc;
   --color-danger: #a02c2c;
 
-  /* Tipografias (se cargan desde Google Fonts en global.css) */
-  /* IBM Plex Sans: sans-serif limpia y legible, con fallback a la fuente
-     del sistema si no llega a cargar. */
-  --font-display: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;  /* titulos */
-  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;     /* cuerpo de texto */
+  /* Fuente del sistema: San Francisco en Apple (-apple-system /
+     BlinkMacSystemFont), Segoe UI en Windows, Roboto en Android. */
+  --font-system: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: var(--font-system);  /* titulos */
+  --font-body: var(--font-system);     /* cuerpo de texto */
   --font-mono: "SFMono-Regular", Consolas, monospace;
 
   /* Espaciados consistentes */
