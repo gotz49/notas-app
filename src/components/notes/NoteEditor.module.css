@@ -30,6 +30,12 @@
 }
 .body {
   flex: 1;
+  display: flex;
+  overflow: hidden; /* el scroll vive en cada columna */
+}
+/* Columna del apunte (titulo + editor), con su propio scroll. */
+.main {
+  flex: 1;
   overflow-y: auto;
   display: flex;
   justify-content: center;
@@ -39,6 +45,55 @@
   max-width: 720px;
   padding: var(--space-xl) var(--space-lg);
   animation: fadeIn 0.3s ease both;
+}
+
+/* --- Panel de keywords (columna derecha) --- */
+.keywords {
+  width: 300px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--color-line);
+  background: var(--color-surface);
+}
+.keywordsHeader {
+  padding: var(--space-md) var(--space-md) var(--space-sm);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ink-soft);
+}
+.keywordsInput {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background: none;
+  resize: none;
+  padding: 0 var(--space-md) var(--space-md);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--color-ink);
+}
+.keywordsInput:focus { outline: none; }
+.keywordsInput::placeholder { color: var(--color-ink-soft); }
+
+/* Boton para abrir/cerrar el panel: solo visible en movil. */
+.keywordsToggle { display: none; }
+
+/* En movil no entran las dos columnas: el panel se oculta y se abre a
+   pantalla completa con el boton "Keywords" (clase .withKeywords). */
+@media (max-width: 768px) {
+  .keywordsToggle { display: inline-flex; }
+  .keywords { display: none; }
+  .withKeywords .main { display: none; }
+  .withKeywords .keywords {
+    display: flex;
+    width: 100%;
+    border-left: none;
+  }
 }
 .titleInput {
   width: 100%;

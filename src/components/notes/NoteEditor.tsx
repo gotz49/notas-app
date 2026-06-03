@@ -27,17 +27,23 @@ type Props = {
 
 export function NoteEditor({ note, onChange, onDelete, onBack }: Props) {
   const [title, setTitle] = useState("");
+  const [keywords, setKeywords] = useState("");
   const [showHelp, setShowHelp] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  // Solo aplica en movil: si el panel de keywords esta abierto. En desktop
+  // el panel se muestra siempre (lo decide el CSS), independiente de esto.
+  const [showKeywords, setShowKeywords] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Cuando cambia la nota seleccionada, sincronizamos el titulo local y
-  // reseteamos confirmacion de borrado e indicador de guardado.
+  // Cuando cambia la nota seleccionada, sincronizamos los campos locales y
+  // reseteamos confirmacion de borrado, indicador de guardado y panel.
   useEffect(() => {
     setTitle(note?.title ?? "");
+    setKeywords(note?.keywords ?? "");
     setConfirmDelete(false);
     setSaveStatus("idle");
+    setShowKeywords(false);
   }, [note?.id]);
 
   // Guarda de verdad: marca "Guardando...", espera al server y marca "Guardado".
@@ -99,6 +105,13 @@ export function NoteEditor({ note, onChange, onDelete, onBack }: Props) {
 
         {/* Derecha: acciones de la nota */}
         <div className={styles.actions}>
+          <Button
+            variant="ghost"
+            className={styles.keywordsToggle}
+            onClick={() => setShowKeywords((v) => !v)}
+          >
+            {showKeywords ? "✕ Keywords" : "Keywords"}
+          </Button>
           <Button variant="ghost" onClick={() => setShowHelp(true)}>Atajos</Button>
           <Button
             variant="ghost"
@@ -119,25 +132,43 @@ export function NoteEditor({ note, onChange, onDelete, onBack }: Props) {
         </div>
       </div>
 
-      <div className={styles.body}>
-        <div className={styles.inner}>
-          <input
-            className={styles.titleInput}
-            value={title}
-            placeholder="Sin titulo"
+      <div className={`${styles.body} ${showKeywords ? styles.withKeywords : ""}`}>
+        <div className={styles.main}>
+          <div className={styles.inner}>
+            <input
+              className={styles.titleInput}
+              value={title}
+              placeholder="Sin titulo"
+              onChange={(e) => {
+                setTitle(e.target.value);
+                scheduleSave({ title: e.target.value });
+              }}
+            />
+            {/* key={note.id}: al cambiar de nota, el editor se reinicia
+                limpio con el contenido de la nota nueva. */}
+            <Editor
+              key={note.id}
+              content={note.content}
+              onChange={(html) => scheduleSave({ content: html })}
+            />
+          </div>
+        </div>
+
+        {/* Panel de keywords: aclaraciones/definiciones atadas a la nota.
+            En desktop va a la derecha siempre; en movil se abre con el
+            boton "Keywords" de la toolbar. */}
+        <aside className={styles.keywords}>
+          <div className={styles.keywordsHeader}>Keywords</div>
+          <textarea
+            className={styles.keywordsInput}
+            value={keywords}
+            placeholder="Términos, definiciones, aclaraciones de conceptos…"
             onChange={(e) => {
-              setTitle(e.target.value);
-              scheduleSave({ title: e.target.value });
+              setKeywords(e.target.value);
+              scheduleSave({ keywords: e.target.value });
             }}
           />
-          {/* key={note.id}: al cambiar de nota, el editor se reinicia
-              limpio con el contenido de la nota nueva. */}
-          <Editor
-            key={note.id}
-            content={note.content}
-            onChange={(html) => scheduleSave({ content: html })}
-          />
-        </div>
+        </aside>
       </div>
 
       {showHelp && <ShortcutsHelp onClose={() => setShowHelp(false)} />}

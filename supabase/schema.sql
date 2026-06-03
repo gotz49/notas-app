@@ -17,14 +17,17 @@ create table if not exists public.notes (
   title       text        not null default 'Sin titulo',
   content     text        not null default '',
   pinned      boolean     not null default false,
+  keywords    text        not null default '',
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
 
--- Migracion: si ya tenias la tabla creada de antes, esto agrega la columna
--- "pinned" sin tocar tus datos. Es idempotente (si ya existe, no hace nada).
+-- Migracion: si ya tenias la tabla creada de antes, esto agrega las columnas
+-- nuevas sin tocar tus datos. Es idempotente (si ya existen, no hace nada).
 alter table public.notes
   add column if not exists pinned boolean not null default false;
+alter table public.notes
+  add column if not exists keywords text not null default '';
 
 -- Indice para listar rapido las notas de un usuario ordenadas por fecha
 create index if not exists notes_user_id_updated_at_idx
