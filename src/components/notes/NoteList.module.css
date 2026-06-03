@@ -106,6 +106,44 @@
   gap: var(--space-xs);
 }
 
+/* Boton para colapsar/expandir la barra (« y »). */
+.collapseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  width: 32px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--color-ink-soft);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.collapseBtn:hover {
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+/* El boton de colapsar (dentro de la barra abierta) no tiene sentido en
+   movil, donde la navegacion ya es de un panel a la vez. */
+.collapseDesktop {
+  display: inline-flex;
+}
+
+/* Barra colapsada: riel angosto, centrado, solo en desktop. */
+.collapsed {
+  width: 48px;
+  align-items: center;
+  padding-top: var(--space-md);
+}
+
+@media (max-width: 768px) {
+  .collapseDesktop {
+    display: none;
+  }
+}
+
 /* Fuerza a TODOS los botones del header a la misma altura,
    sin importar si tienen texto o un emoji. */
 .headerActions > button {

@@ -32,6 +32,10 @@ export function NoteList({
   // por eso vive aca y no en un hook ni en App.
   const [query, setQuery] = useState("");
 
+  // Barra colapsada (solo desktop): la reduce a un riel angosto para ganar
+  // espacio de lectura. El boton para colapsar/expandir esta oculto en movil.
+  const [collapsed, setCollapsed] = useState(false);
+
   // Filtra por titulo o contenido, sin distinguir mayusculas. Al contenido
   // le quitamos las etiquetas HTML para no matchear nombres de tags.
   const q = query.trim().toLowerCase();
@@ -49,6 +53,22 @@ export function NoteList({
     (a, b) => Number(b.pinned) - Number(a.pinned)
   );
 
+  // Colapsada: riel angosto con solo el boton para volver a expandir.
+  if (collapsed) {
+    return (
+      <aside className={`${styles.sidebar} ${styles.collapsed}`}>
+        <button
+          className={styles.collapseBtn}
+          onClick={() => setCollapsed(false)}
+          title="Mostrar la lista de notas"
+          aria-label="Mostrar la lista de notas"
+        >
+          »
+        </button>
+      </aside>
+    );
+  }
+
   return (
     <aside className={styles.sidebar}>
       <div className={styles.header}>
@@ -56,6 +76,14 @@ export function NoteList({
         <div className={styles.headerActions}>
           <ThemeToggle />
           <Button variant="ghost" onClick={onCreate}>+ Nueva</Button>
+          <button
+            className={`${styles.collapseBtn} ${styles.collapseDesktop}`}
+            onClick={() => setCollapsed(true)}
+            title="Ocultar la lista de notas"
+            aria-label="Ocultar la lista de notas"
+          >
+            «
+          </button>
         </div>
       </div>
 

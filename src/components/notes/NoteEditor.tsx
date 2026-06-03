@@ -31,19 +31,21 @@ export function NoteEditor({ note, onChange, onDelete, onBack }: Props) {
   const [showHelp, setShowHelp] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-  // Solo aplica en movil: si el panel de keywords esta abierto. En desktop
-  // el panel se muestra siempre (lo decide el CSS), independiente de esto.
-  const [showKeywords, setShowKeywords] = useState(false);
+  // Visibilidad del panel de keywords. Es preferencia de layout (no se resetea
+  // al cambiar de nota): arranca abierto en desktop y cerrado en movil, y el
+  // boton "Keywords" lo alterna en cualquier tamano.
+  const [showKeywords, setShowKeywords] = useState(
+    () => window.matchMedia("(min-width: 769px)").matches
+  );
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Cuando cambia la nota seleccionada, sincronizamos los campos locales y
-  // reseteamos confirmacion de borrado, indicador de guardado y panel.
+  // reseteamos confirmacion de borrado e indicador de guardado.
   useEffect(() => {
     setTitle(note?.title ?? "");
     setKeywords(note?.keywords ?? "");
     setConfirmDelete(false);
     setSaveStatus("idle");
-    setShowKeywords(false);
   }, [note?.id]);
 
   // Guarda de verdad: marca "Guardando...", espera al server y marca "Guardado".
@@ -107,7 +109,6 @@ export function NoteEditor({ note, onChange, onDelete, onBack }: Props) {
         <div className={styles.actions}>
           <Button
             variant="ghost"
-            className={styles.keywordsToggle}
             onClick={() => setShowKeywords((v) => !v)}
           >
             {showKeywords ? "✕ Keywords" : "Keywords"}
