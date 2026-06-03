@@ -94,3 +94,10 @@
   padding-bottom: 0;
   justify-content: center;
 }
+
+.itemTitle {
+  color: var(--color-ink);
+}
+.itemDate {
+  color: var(--color-ink-soft);
+}
