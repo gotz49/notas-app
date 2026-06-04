@@ -7,12 +7,18 @@
 //
 //  Guarda con "debounce": espera ~600ms despues de que dejas de
 //  teclear antes de mandar a la base, para no escribir en cada letra.
+//
+//  Las acciones de la nota (Keywords, Atajos, Fijar, Exportar,
+//  Borrar) viven en un menu hamburguesa para no recargar la barra
+//  (sobre todo en movil). El mismo menu se ofrece con clic derecho
+//  desde la lista (ver NoteActionsMenu).
 // ============================================================
 import { useEffect, useRef, useState } from "react";
 import type { Note, NoteUpdate } from "../../types";
 import { Button } from "../ui/Button";
 import { Editor } from "./Editor";
-import { ShortcutsHelp } from "./ShortcutsHelp";
+import { NoteActionsMenu } from "./NoteActionsMenu";
+import { exportNote } from "./exportNote";
 import styles from "./NoteEditor.module.css";
 
 // Estado del indicador de guardado que se muestra en la toolbar.
@@ -23,37 +29,44 @@ type Props = {
   onChange: (id: string, changes: NoteUpdate) => void | Promise<unknown>;
   onDelete: (id: string) => void;
   onBack?: () => void; // volver a la lista (solo visible en movil)
+  // Visibilidad del panel de keywords (la maneja App, que tambien la abre
+  // desde el clic derecho de la lista) y disparador del panel de atajos.
+  showKeywords: boolean;
+  onToggleKeywords: () => void;
+  onShowHelp: () => void;
 };
 
-export function NoteEditor({ note, onChange, onDelete, onBack }: Props) {
+export function NoteEditor({
+  note,
+  onChange,
+  onDelete,
+  onBack,
+  showKeywords,
+  onToggleKeywords,
+  onShowHelp,
+}: Props) {
   const [title, setTitle] = useState("");
   const [keywords, setKeywords] = useState("");
-  const [showHelp, setShowHelp] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-  // Visibilidad del panel de keywords. En desktop es una preferencia de layout
-  // que se recuerda entre sesiones (localStorage) y arranca abierta; en movil
-  // siempre arranca cerrada para ver primero el apunte. No se resetea al
-  // cambiar de nota; el boton "Keywords" la alterna en cualquier tamano.
-  const isDesktop = window.matchMedia("(min-width: 769px)").matches;
-  const [showKeywords, setShowKeywords] = useState(() => {
-    if (!isDesktop) return false;
-    const saved = localStorage.getItem("keywordsOpen");
-    return saved === null ? true : saved === "true";
-  });
-  useEffect(() => {
-    if (isDesktop) localStorage.setItem("keywordsOpen", String(showKeywords));
-  }, [isDesktop, showKeywords]);
+  const [menuOpen, setMenuOpen] = useState(false); // menu hamburguesa de acciones
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Cuando cambia la nota seleccionada, sincronizamos los campos locales y
-  // reseteamos confirmacion de borrado e indicador de guardado.
+  // reseteamos el indicador de guardado y el menu de acciones.
   useEffect(() => {
     setTitle(note?.title ?? "");
     setKeywords(note?.keywords ?? "");
-    setConfirmDelete(false);
     setSaveStatus("idle");
+    setMenuOpen(false);
   }, [note?.id]);
+
+  // El "Guardado ✓" es efimero: se muestra un instante y desaparece, sin
+  // quedarse fijo en la barra.
+  useEffect(() => {
+    if (saveStatus !== "saved") return;
+    const t = setTimeout(() => setSaveStatus("idle"), 800);
+    return () => clearTimeout(t);
+  }, [saveStatus]);
 
   // Guarda de verdad: marca "Guardando...", espera al server y marca "Guardado".
   async function commitSave(id: string, changes: NoteUpdate) {
@@ -72,28 +85,16 @@ export function NoteEditor({ note, onChange, onDelete, onBack }: Props) {
     timer.current = setTimeout(() => void commitSave(id, changes), 600);
   }
 
-  // Exportar la nota activa como .txt (convierte el HTML a texto plano).
-  function handleExport() {
-    if (!note) return;
-    const cuerpo =
-      new DOMParser().parseFromString(note.content, "text/html").body
-        .textContent ?? "";
-    const texto = `${note.title}\n\n${cuerpo}`.trim() + "\n";
-    const nombre = (note.title.trim() || "nota").replace(/[\\/:*?"<>|]/g, "_");
-    const url = URL.createObjectURL(
-      new Blob([texto], { type: "text/plain;charset=utf-8" })
-    );
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${nombre}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
+  // Sin nota seleccionada: pantalla de inicio (tambien al apretar Esc en una
+  // nota abierta, ver App). Mensaje breve y en gris sutil.
   if (!note) {
     return (
       <main className={styles.editor}>
-        <p className={styles.placeholder}>Selecciona o crea una nota para empezar.</p>
+        <div className={styles.home}>
+          <p className={styles.homeText}>
+            Seleccioná una nota o creá una nueva para visualizarla.
+          </p>
+        </div>
       </main>
     );
   }
@@ -105,37 +106,42 @@ export function NoteEditor({ note, onChange, onDelete, onBack }: Props) {
         <Button variant="ghost" className={styles.backBtn} onClick={onBack}>← Notas</Button>
 
         {/* Centro: estado de guardado */}
-        {saveStatus === "saving" && (
-          <span className={styles.saveStatus}>Guardando…</span>
-        )}
-        {saveStatus === "saved" && (
-          <span className={styles.saveStatus}>Guardado ✓</span>
-        )}
+        <span className={styles.saveSlot}>
+          {saveStatus === "saving" && (
+            <span className={styles.saveStatus}>Guardando…</span>
+          )}
+          {saveStatus === "saved" && (
+            <span className={`${styles.saveStatus} ${styles.saved}`}>Guardado ✓</span>
+          )}
+        </span>
 
-        {/* Derecha: acciones de la nota */}
-        <div className={styles.actions}>
+        {/* Derecha: menu hamburguesa con todas las acciones de la nota */}
+        <div className={styles.menuWrap}>
           <Button
             variant="ghost"
-            onClick={() => setShowKeywords((v) => !v)}
+            className={styles.menuBtn}
+            aria-label="Opciones de la nota"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenuOpen((v) => !v);
+            }}
           >
-            {showKeywords ? "✕ Keywords" : "Keywords"}
+            ☰
           </Button>
-          <Button variant="ghost" onClick={() => setShowHelp(true)}>Atajos</Button>
-          <Button
-            variant="ghost"
-            onClick={() => void commitSave(note.id, { pinned: !note.pinned })}
-          >
-            {note.pinned ? "📌 Quitar" : "📌 Fijar"}
-          </Button>
-          <Button variant="ghost" onClick={handleExport}>Exportar</Button>
-          {confirmDelete ? (
-            <>
-              <span className={styles.confirmText}>¿Borrar?</span>
-              <Button variant="danger" onClick={() => onDelete(note.id)}>Sí</Button>
-              <Button variant="ghost" onClick={() => setConfirmDelete(false)}>Cancelar</Button>
-            </>
-          ) : (
-            <Button variant="danger" onClick={() => setConfirmDelete(true)}>Borrar</Button>
+          {menuOpen && (
+            <NoteActionsMenu
+              note={note}
+              style={{ position: "absolute", top: "calc(100% + 6px)", right: 0 }}
+              keywordsLabel={showKeywords ? "Ocultar keywords" : "Keywords"}
+              onKeywords={onToggleKeywords}
+              onHelp={onShowHelp}
+              onTogglePin={() => void commitSave(note.id, { pinned: !note.pinned })}
+              onExport={() => exportNote(note)}
+              onDelete={() => onDelete(note.id)}
+              onClose={() => setMenuOpen(false)}
+            />
           )}
         </div>
       </div>
@@ -163,8 +169,8 @@ export function NoteEditor({ note, onChange, onDelete, onBack }: Props) {
         </div>
 
         {/* Panel de keywords: aclaraciones/definiciones atadas a la nota.
-            En desktop va a la derecha siempre; en movil se abre con el
-            boton "Keywords" de la toolbar. */}
+            En desktop va a la derecha siempre; en movil se abre con la
+            opcion "Keywords" del menu de acciones. */}
         <aside className={styles.keywords}>
           <div className={styles.keywordsHeader}>Keywords</div>
           <textarea
@@ -178,8 +184,6 @@ export function NoteEditor({ note, onChange, onDelete, onBack }: Props) {
           />
         </aside>
       </div>
-
-      {showHelp && <ShortcutsHelp onClose={() => setShowHelp(false)} />}
     </main>
   );
 }

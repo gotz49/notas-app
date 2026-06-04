@@ -15,6 +15,7 @@
   --color-accent: #9c4221;      /* terracota: acento, botones */
   --color-accent-soft: #f0e3dc;
   --color-danger: #a02c2c;
+  --color-success: #6b8260;     /* verde apagado: confirmacion de guardado */
 
   /* Fuente del sistema: San Francisco en Apple (-apple-system /
      BlinkMacSystemFont), Segoe UI en Windows, Roboto en Android. */
@@ -45,4 +46,5 @@
   --color-accent: #d98a5f;
   --color-accent-soft: #3a2c23;
   --color-danger: #e07a6f;
+  --color-success: #8fae84;
 }

@@ -33,16 +33,23 @@ export function Editor({ content, onChange }: Props) {
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
   });
 
-  // Cerrar el menu al hacer clic en cualquier lado o con Escape.
+  // Cerrar el menu al hacer clic en cualquier lado o con Escape. El Escape se
+  // escucha en fase de captura y detiene la propagacion para que solo cierre
+  // este menu y no dispare ademas el "volver al inicio" global de App.
   useEffect(() => {
     if (!menu) return;
     const close = () => setMenu(null);
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenu(null);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        setMenu(null);
+      }
+    };
     window.addEventListener("click", close);
-    window.addEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
     return () => {
       window.removeEventListener("click", close);
-      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keydown", onKey, true);
     };
   }, [menu]);
 

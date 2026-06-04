@@ -14,19 +14,35 @@
   padding: var(--space-sm) var(--space-lg);
   border-bottom: 1px solid var(--color-line);
 }
-/* Grupo de acciones de la derecha. Envuelve a una segunda fila en
-   pantallas angostas en vez de desbordar. */
-.actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--space-sm);
+/* Slot central del estado de guardado: ocupa el espacio entre el boton de
+   volver (movil) y la hamburguesa, y centra el texto. */
+.saveSlot {
+  flex: 1;
+  text-align: center;
 }
 .saveStatus {
   font-size: 0.8rem;
   color: var(--color-ink-soft);
   white-space: nowrap;
+}
+/* "Guardado ✓": verde apagado y efimero (lo borra un timer en NoteEditor). */
+.saved {
+  color: var(--color-success);
+  animation: fadeIn 0.2s ease both;
+}
+
+/* Contenedor del boton hamburguesa: ancla el menu desplegable debajo. */
+.menuWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+/* El boton hamburguesa hereda el look "ghost"; aca solo fijamos un ancho
+   parejo para que el icono quede centrado y cuadrado. */
+.menuBtn {
+  min-width: 38px;
+  justify-content: center;
+  font-size: 1.1rem;
+  line-height: 1;
 }
 .body {
   flex: 1;
@@ -105,18 +121,20 @@
   margin-bottom: var(--space-md);
 }
 .titleInput:focus { outline: none; }
-.placeholder {
+
+/* Pantalla de inicio: sin nota seleccionada. Mensaje breve y discreto. */
+.home {
   flex: 1;
   display: grid;
   place-items: center;
-  color: var(--color-ink-soft);
-  font-style: italic;
+  padding: var(--space-lg);
 }
-
-/* Texto de la confirmacion de borrado, junto a los botones Si/Cancelar. */
-.confirmText {
-  font-size: 0.9rem;
+.homeText {
+  max-width: 28ch;
+  text-align: center;
   color: var(--color-ink-soft);
+  font-size: 0.9rem;
+  opacity: 0.75;
 }
 
 /* Boton "volver a la lista": oculto en desktop, visible solo en movil. */

@@ -12,9 +12,11 @@ type Props = {
   note: Note;
   active: boolean;
   onSelect: (id: string) => void;
+  // Clic derecho: abre el menu de acciones en (x, y). Lo maneja NoteList.
+  onContext: (note: Note, x: number, y: number) => void;
 };
 
-export function NoteListItem({ note, active, onSelect }: Props) {
+export function NoteListItem({ note, active, onSelect, onContext }: Props) {
   const fecha = new Date(note.updated_at).toLocaleDateString("es", {
     day: "numeric",
     month: "short",
@@ -23,6 +25,10 @@ export function NoteListItem({ note, active, onSelect }: Props) {
     <button
       className={`${styles.item} ${active ? styles.itemActive : ""}`}
       onClick={() => onSelect(note.id)}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        onContext(note, e.clientX, e.clientY);
+      }}
     >
       <div className={styles.itemTitle}>
         {note.pinned && <span className={styles.pin} aria-label="Fijada">📌</span>}

@@ -8,6 +8,8 @@ import { useEffect, useState } from "react";
 import type { Note } from "../../types";
 import { Button } from "../ui/Button";
 import { NoteListItem } from "./NoteListItem";
+import { NoteActionsMenu } from "./NoteActionsMenu";
+import { exportNote } from "./exportNote";
 import styles from "./NoteList.module.css";
 import { ThemeToggle } from "../ui/ThemeToggle";
 
@@ -18,6 +20,11 @@ type Props = {
   onSelect: (id: string) => void;
   onCreate: () => void;
   onSignOut: () => void;
+  // Acciones del menu de clic derecho sobre una nota.
+  onTogglePin: (note: Note) => void;
+  onDelete: (id: string) => void;
+  onShowHelp: () => void;
+  onOpenKeywords: (id: string) => void;
 };
 
 export function NoteList({
@@ -27,7 +34,15 @@ export function NoteList({
   onSelect,
   onCreate,
   onSignOut,
+  onTogglePin,
+  onDelete,
+  onShowHelp,
+  onOpenKeywords,
 }: Props) {
+  // Menu contextual de clic derecho: la nota apuntada y su posicion.
+  const [menu, setMenu] = useState<{ note: Note; x: number; y: number } | null>(
+    null
+  );
   // Texto de busqueda. Es estado de vista (solo filtra lo que se muestra),
   // por eso vive aca y no en un hook ni en App.
   const [query, setQuery] = useState("");
@@ -110,10 +125,26 @@ export function NoteList({
               note={note}
               active={note.id === activeId}
               onSelect={onSelect}
+              onContext={(note, x, y) => setMenu({ note, x, y })}
             />
           ))
         )}
       </div>
+
+      {/* Mismo menu de acciones que la hamburguesa del editor, en el cursor. */}
+      {menu && (
+        <NoteActionsMenu
+          note={menu.note}
+          style={{ position: "fixed", top: menu.y, left: menu.x }}
+          keywordsLabel="Keywords"
+          onKeywords={() => onOpenKeywords(menu.note.id)}
+          onHelp={onShowHelp}
+          onTogglePin={() => onTogglePin(menu.note)}
+          onExport={() => exportNote(menu.note)}
+          onDelete={() => onDelete(menu.note.id)}
+          onClose={() => setMenu(null)}
+        />
+      )}
 
       <div className={styles.footer}>
         <span className={styles.email}>{email}</span>
