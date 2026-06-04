@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Note, NoteUpdate } from "../types";
 import * as notesService from "../services/notes.service";
+import * as imagesService from "../services/images.service";
 
 export function useNotes(userId: string | undefined) {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -47,11 +48,28 @@ export function useNotes(userId: string | undefined) {
     await notesService.updateNote(id, changes);
   }, []);
 
-  // Borrar una nota.
+  // Borrar una nota. Antes leemos su contenido (desde el estado actual, via
+  // el updater para no depender de un closure viejo) para despues limpiar sus
+  // imagenes del Storage y no dejar archivos huerfanos ocupando cuota.
   const remove = useCallback(async (id: string) => {
-    setNotes((prev) => prev.filter((n) => n.id !== id));
+    let contenido = "";
+    setNotes((prev) => {
+      contenido = prev.find((n) => n.id === id)?.content ?? "";
+      return prev.filter((n) => n.id !== id);
+    });
     await notesService.deleteNote(id);
+    // Best-effort: si falla la limpieza, la nota igual quedo borrada.
+    void imagesService.deleteNoteImages(contenido).catch(() => {});
   }, []);
 
-  return { notes, loading, create, update, remove };
+  // Subir una imagen y obtener su URL publica (para insertarla en el editor).
+  const uploadImage = useCallback(
+    async (file: File) => {
+      if (!userId) throw new Error("No hay usuario.");
+      return imagesService.uploadNoteImage(file, userId);
+    },
+    [userId]
+  );
+
+  return { notes, loading, create, update, remove, uploadImage };
 }

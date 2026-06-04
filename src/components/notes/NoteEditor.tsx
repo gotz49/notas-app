@@ -34,6 +34,7 @@ type Props = {
   showKeywords: boolean;
   onToggleKeywords: () => void;
   onShowHelp: () => void;
+  onUploadImage: (file: File) => Promise<string>; // sube imagen -> URL publica
 };
 
 export function NoteEditor({
@@ -44,6 +45,7 @@ export function NoteEditor({
   showKeywords,
   onToggleKeywords,
   onShowHelp,
+  onUploadImage,
 }: Props) {
   const [title, setTitle] = useState("");
   const [keywords, setKeywords] = useState("");
@@ -164,6 +166,7 @@ export function NoteEditor({
               key={note.id}
               content={note.content}
               onChange={(html) => scheduleSave({ content: html })}
+              onUploadImage={onUploadImage}
             />
           </div>
         </div>

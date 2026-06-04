@@ -25,7 +25,8 @@ import styles from "./App.module.css";
 
 export default function App() {
   const { user, loading: authLoading } = useAuth();
-  const { notes, loading: notesLoading, create, update, remove } = useNotes(user?.id);
+  const { notes, loading: notesLoading, create, update, remove, uploadImage } =
+    useNotes(user?.id);
   const [activeId, setActiveId] = useState<string | null>(null);
   // En movil solo se ve un panel a la vez: "list" o "editor".
   const [mobileView, setMobileView] = useState<"list" | "editor">("list");
@@ -126,6 +127,7 @@ export default function App() {
           showKeywords={showKeywords}
           onToggleKeywords={() => setShowKeywords((v) => !v)}
           onShowHelp={() => setShowHelp(true)}
+          onUploadImage={uploadImage}
         />
       )}
       {showHelp && <ShortcutsHelp onClose={() => setShowHelp(false)} />}

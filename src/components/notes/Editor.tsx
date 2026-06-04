@@ -8,30 +8,81 @@
 //   2) Atajos de teclado (ver panel "Atajos").
 //   3) Clic derecho -> menu de formatos.
 //
-//  TipTap genera HTML estandar (h1, ul, blockquote...). Por eso el
-//  contenido se guarda como HTML.
+//  Imagenes: se pueden pegar, arrastrar o elegir desde el menu. No
+//  van en la base: se suben a Storage (onUploadImage) y en el HTML
+//  queda solo un <img src="url">. Por eso el contenido se guarda
+//  como HTML.
 // ============================================================
 import { useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent, type Editor as TipTapEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import Image from "@tiptap/extension-image";
 import styles from "./Editor.module.css";
 
 type Props = {
   content: string;
   onChange: (html: string) => void;
+  // Sube una imagen y devuelve su URL publica. Si no se pasa, se desactiva
+  // todo lo relacionado con imagenes (pegar, arrastrar y la opcion del menu).
+  onUploadImage?: (file: File) => Promise<string>;
 };
 
 // Posicion del menu contextual (o null si esta cerrado)
 type MenuPos = { x: number; y: number } | null;
 
-export function Editor({ content, onChange }: Props) {
+// De un DataTransfer/Clipboard, devuelve solo los archivos de imagen.
+function imageFiles(dt: DataTransfer | null): File[] {
+  if (!dt) return [];
+  return Array.from(dt.files).filter((f) => f.type.startsWith("image/"));
+}
+
+export function Editor({ content, onChange, onUploadImage }: Props) {
   const [menu, setMenu] = useState<MenuPos>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  // Funcion "subir + insertar". Vive en un ref porque los handlers de
+  // pegar/soltar de TipTap se crean una sola vez (al iniciar el editor) y
+  // necesitan la version actual con el editor ya montado y onUploadImage.
+  const insertImages = useRef<(files: File[]) => void>(() => {});
 
   const editor = useEditor({
-    extensions: [StarterKit], // incluye negrita, titulos, listas, cita, codigo, divisor...
+    extensions: [StarterKit, Image], // negrita, titulos, listas, cita, divisor, imagen...
     content,
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
+    editorProps: {
+      // Pegar una imagen: la subimos e insertamos en vez del comportamiento
+      // por defecto (que la incrustaria como base64 y engordaria la nota).
+      handlePaste: (_view, event) => {
+        const files = imageFiles(event.clipboardData);
+        if (files.length === 0) return false;
+        insertImages.current(files);
+        return true;
+      },
+      // Arrastrar y soltar una imagen sobre el editor.
+      handleDrop: (_view, event) => {
+        const files = imageFiles((event as DragEvent).dataTransfer);
+        if (files.length === 0) return false;
+        event.preventDefault();
+        insertImages.current(files);
+        return true;
+      },
+    },
   });
+
+  // Mantener insertImages apuntando a una funcion con el editor y el uploader
+  // actuales. Sube cada archivo (en orden) y lo inserta al terminar.
+  useEffect(() => {
+    insertImages.current = async (files: File[]) => {
+      if (!editor || !onUploadImage) return;
+      for (const file of files) {
+        try {
+          const url = await onUploadImage(file);
+          editor.chain().focus().setImage({ src: url }).run();
+        } catch {
+          alert("No se pudo subir la imagen.");
+        }
+      }
+    };
+  }, [editor, onUploadImage]);
 
   // Cerrar el menu al hacer clic en cualquier lado o con Escape. El Escape se
   // escucha en fase de captura y detiene la propagacion para que solo cierre
@@ -63,13 +114,40 @@ export function Editor({ content, onChange }: Props) {
   return (
     <div className={styles.editor} onContextMenu={openMenu}>
       <EditorContent editor={editor} />
-      {menu && <ContextMenu editor={editor} pos={menu} />}
+      {menu && (
+        <ContextMenu
+          editor={editor}
+          pos={menu}
+          onImage={onUploadImage ? () => fileInput.current?.click() : undefined}
+        />
+      )}
+      {/* Selector de archivo oculto, disparado por la opcion "Insertar imagen". */}
+      <input
+        ref={fileInput}
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        onChange={(e) => {
+          const files = Array.from(e.target.files ?? []);
+          if (files.length) insertImages.current(files);
+          e.target.value = ""; // permite volver a elegir el mismo archivo
+        }}
+      />
     </div>
   );
 }
 
 // ---- Menu contextual (clic derecho) -------------------------
-function ContextMenu({ editor, pos }: { editor: TipTapEditor; pos: { x: number; y: number } }) {
+function ContextMenu({
+  editor,
+  pos,
+  onImage,
+}: {
+  editor: TipTapEditor;
+  pos: { x: number; y: number };
+  onImage?: () => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
 
   // Cada item ejecuta un comando de TipTap sobre la seleccion actual.
@@ -99,6 +177,12 @@ function ContextMenu({ editor, pos }: { editor: TipTapEditor; pos: { x: number; 
       <MenuItem label="Cita" onClick={run(() => editor.chain().focus().toggleBlockquote().run())} active={editor.isActive("blockquote")} />
       <MenuItem label="Codigo" onClick={run(() => editor.chain().focus().toggleCode().run())} active={editor.isActive("code")} />
       <MenuItem label="Divisor" onClick={run(() => editor.chain().focus().setHorizontalRule().run())} />
+      {onImage && (
+        <>
+          <div className={styles.sep} />
+          <MenuItem label="Insertar imagen…" onClick={onImage} />
+        </>
+      )}
       <div className={styles.sep} />
       <MenuItem label="Limpiar formato" onClick={run(() => editor.chain().focus().unsetAllMarks().clearNodes().run())} />
     </div>

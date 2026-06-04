@@ -54,18 +54,25 @@ alter table public.notes enable row level security;
 -- Cada politica responde: "¿este usuario puede hacer esta operacion?"
 -- auth.uid() = el id del usuario logueado en la peticion actual.
 
+-- El "drop ... if exists" antes de cada una hace que el archivo se pueda
+-- re-correr sin el error "policy already exists".
+
+drop policy if exists "leer mis notas" on public.notes;
 create policy "leer mis notas"
   on public.notes for select
   using (auth.uid() = user_id);
 
+drop policy if exists "crear mis notas" on public.notes;
 create policy "crear mis notas"
   on public.notes for insert
   with check (auth.uid() = user_id);
 
+drop policy if exists "editar mis notas" on public.notes;
 create policy "editar mis notas"
   on public.notes for update
   using (auth.uid() = user_id);
 
+drop policy if exists "borrar mis notas" on public.notes;
 create policy "borrar mis notas"
   on public.notes for delete
   using (auth.uid() = user_id);
@@ -79,3 +86,42 @@ begin
 exception
   when duplicate_object then null;
 end $$;
+
+-- 5) Storage de imagenes -------------------------------------
+-- Las imagenes de las notas NO van en la base: se suben a este bucket y la
+-- nota guarda solo su URL (la tabla "notes" queda liviana). El bucket es
+-- PUBLICO para que el <img src="..."> de la nota funcione directo; las rutas
+-- usan un UUID al azar (no adivinables). Escribir/borrar SI esta restringido
+-- al dueno: cada usuario solo toca su propia carpeta "<user_id>/...".
+
+insert into storage.buckets (id, name, public)
+values ('imagenes', 'imagenes', true)
+on conflict (id) do nothing;
+
+-- Lectura: el bucket es publico, asi que cualquiera con la URL ve la imagen
+-- (no hace falta politica de SELECT). Subir/actualizar/borrar: solo el dueno
+-- de la carpeta. storage.foldername(name)[1] = primer segmento de la ruta.
+
+drop policy if exists "subir mis imagenes" on storage.objects;
+create policy "subir mis imagenes"
+  on storage.objects for insert to authenticated
+  with check (
+    bucket_id = 'imagenes'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "actualizar mis imagenes" on storage.objects;
+create policy "actualizar mis imagenes"
+  on storage.objects for update to authenticated
+  using (
+    bucket_id = 'imagenes'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "borrar mis imagenes" on storage.objects;
+create policy "borrar mis imagenes"
+  on storage.objects for delete to authenticated
+  using (
+    bucket_id = 'imagenes'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
