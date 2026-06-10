@@ -32,6 +32,9 @@ export function NoteListItem({ note, active, onSelect, onContext }: Props) {
     >
       <div className={styles.itemTitle}>
         {note.pinned && <span className={styles.pin} aria-label="Fijada">📌</span>}
+        {note.kind === "gastos" && (
+          <span className={styles.pin} aria-label="Lista de gastos">💲</span>
+        )}
         {note.title || "Sin titulo"}
       </div>
       <div className={styles.itemDate}>{fecha}</div>

@@ -5,7 +5,7 @@
 //  el pie con el email del usuario + cerrar sesion.
 // ============================================================
 import { useEffect, useState } from "react";
-import type { Note } from "../../types";
+import type { Note, NoteKind } from "../../types";
 import { Button } from "../ui/Button";
 import { NoteListItem } from "./NoteListItem";
 import { NoteActionsMenu } from "./NoteActionsMenu";
@@ -18,7 +18,7 @@ type Props = {
   activeId: string | null;
   email: string | undefined;
   onSelect: (id: string) => void;
-  onCreate: () => void;
+  onCreate: (kind: NoteKind) => void;
   onSignOut: () => void;
   // Acciones del menu de clic derecho sobre una nota.
   onTogglePin: (note: Note) => void;
@@ -46,6 +46,25 @@ export function NoteList({
   // Texto de busqueda. Es estado de vista (solo filtra lo que se muestra),
   // por eso vive aca y no en un hook ni en App.
   const [query, setQuery] = useState("");
+
+  // Menu desplegable del boton "+ Nueva": elegir entre nota normal o de gastos.
+  const [createOpen, setCreateOpen] = useState(false);
+  useEffect(() => {
+    if (!createOpen) return;
+    const close = () => setCreateOpen(false);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        setCreateOpen(false);
+      }
+    };
+    window.addEventListener("click", close);
+    window.addEventListener("keydown", onKey, true);
+    return () => {
+      window.removeEventListener("click", close);
+      window.removeEventListener("keydown", onKey, true);
+    };
+  }, [createOpen]);
 
   // Barra colapsada (solo desktop): la reduce a un riel angosto para ganar
   // espacio de lectura. Se recuerda entre sesiones via localStorage. El CSS
@@ -91,7 +110,42 @@ export function NoteList({
         <span className={styles.brand}>Notas</span>
         <div className={styles.headerActions}>
           <ThemeToggle />
-          <Button variant="ghost" onClick={onCreate}>+ Nueva</Button>
+          {/* "+ Nueva" abre un menu para elegir nota normal o lista de gastos. */}
+          <div className={styles.createWrap}>
+            <Button
+              variant="ghost"
+              aria-haspopup="menu"
+              aria-expanded={createOpen}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCreateOpen((v) => !v);
+              }}
+            >
+              + Nueva
+            </Button>
+            {createOpen && (
+              <div className={styles.createMenu} onClick={(e) => e.stopPropagation()}>
+                <button
+                  className={styles.createItem}
+                  onClick={() => {
+                    setCreateOpen(false);
+                    onCreate("nota");
+                  }}
+                >
+                  📝 Nota
+                </button>
+                <button
+                  className={styles.createItem}
+                  onClick={() => {
+                    setCreateOpen(false);
+                    onCreate("gastos");
+                  }}
+                >
+                  💲 Lista de gastos
+                </button>
+              </div>
+            )}
+          </div>
           <button
             className={`${styles.collapseBtn} ${styles.collapseDesktop}`}
             onClick={() => setCollapsed(true)}

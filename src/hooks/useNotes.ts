@@ -6,7 +6,7 @@
 //  dispositivos. Los componentes solo llaman estas funciones.
 // ============================================================
 import { useCallback, useEffect, useState } from "react";
-import type { Note, NoteUpdate } from "../types";
+import type { Note, NoteKind, NoteUpdate } from "../types";
 import * as notesService from "../services/notes.service";
 import * as imagesService from "../services/images.service";
 
@@ -31,13 +31,17 @@ export function useNotes(userId: string | undefined) {
     return unsubscribe;
   }, [userId, reload]);
 
-  // Crear una nota nueva y devolverla (para abrirla al instante).
-  const create = useCallback(async () => {
-    if (!userId) return undefined;
-    const nota = await notesService.createNote(userId);
-    setNotes((prev) => [nota, ...prev]); // optimista: la mostramos ya
-    return nota;
-  }, [userId]);
+  // Crear una nota nueva y devolverla (para abrirla al instante). El `kind`
+  // elige si es nota normal o nota de gastos.
+  const create = useCallback(
+    async (kind: NoteKind = "nota") => {
+      if (!userId) return undefined;
+      const nota = await notesService.createNote(userId, kind);
+      setNotes((prev) => [nota, ...prev]); // optimista: la mostramos ya
+      return nota;
+    },
+    [userId]
+  );
 
   // Editar una nota. Actualizamos la pantalla al instante (optimista)
   // y dejamos que el servidor confirme por detras.

@@ -14,6 +14,7 @@
 create table if not exists public.notes (
   id          uuid        primary key default gen_random_uuid(),
   user_id     uuid        not null references auth.users (id) on delete cascade,
+  kind        text        not null default 'nota',
   title       text        not null default 'Sin titulo',
   content     text        not null default '',
   pinned      boolean     not null default false,
@@ -28,6 +29,10 @@ alter table public.notes
   add column if not exists pinned boolean not null default false;
 alter table public.notes
   add column if not exists keywords text not null default '';
+-- kind: tipo de nota. 'nota' = texto enriquecido (HTML en content);
+-- 'gastos' = lista de gastos (JSON en content). Ver src/types/index.ts.
+alter table public.notes
+  add column if not exists kind text not null default 'nota';
 
 -- Indice para listar rapido las notas de un usuario ordenadas por fecha
 create index if not exists notes_user_id_updated_at_idx

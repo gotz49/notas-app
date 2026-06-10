@@ -16,6 +16,7 @@ import styles from "./NoteActionsMenu.module.css";
 type Props = {
   note: Note;
   style?: CSSProperties; // posicion (fixed en la lista, absolute en el editor)
+  showKeywordsItem?: boolean; // las notas de gastos no tienen keywords
   keywordsLabel: string; // texto del item de keywords segun el contexto
   onKeywords: () => void;
   onHelp: () => void;
@@ -28,6 +29,7 @@ type Props = {
 export function NoteActionsMenu({
   note,
   style,
+  showKeywordsItem = true,
   keywordsLabel,
   onKeywords,
   onHelp,
@@ -66,7 +68,9 @@ export function NoteActionsMenu({
   return (
     // stopPropagation: que un clic dentro del menu no lo cierre antes de actuar.
     <div className={styles.menu} style={style} onClick={(e) => e.stopPropagation()}>
-      <button className={styles.item} onClick={run(onKeywords)}>{keywordsLabel}</button>
+      {showKeywordsItem && (
+        <button className={styles.item} onClick={run(onKeywords)}>{keywordsLabel}</button>
+      )}
       <button className={styles.item} onClick={run(onHelp)}>Atajos</button>
       <button className={styles.item} onClick={run(onTogglePin)}>
         {/* Solo el emoji se achica: su hitbox quedaba mas alta que la del texto. */}

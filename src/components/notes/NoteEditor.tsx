@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Note, NoteUpdate } from "../../types";
 import { Button } from "../ui/Button";
 import { Editor } from "./Editor";
+import { GastosEditor } from "./GastosEditor";
 import { NoteActionsMenu } from "./NoteActionsMenu";
 import { exportNote } from "./exportNote";
 import styles from "./NoteEditor.module.css";
@@ -101,6 +102,10 @@ export function NoteEditor({
     );
   }
 
+  // Las notas de gastos usan un editor distinto (listas con checks y montos)
+  // y no tienen panel de keywords ni imagenes.
+  const esGastos = note.kind === "gastos";
+
   return (
     <main className={styles.editor}>
       <div className={styles.toolbar}>
@@ -136,6 +141,7 @@ export function NoteEditor({
             <NoteActionsMenu
               note={note}
               style={{ position: "absolute", top: "calc(100% + 6px)", right: 0 }}
+              showKeywordsItem={!esGastos}
               keywordsLabel={showKeywords ? "Ocultar keywords" : "Keywords"}
               onKeywords={onToggleKeywords}
               onHelp={onShowHelp}
@@ -148,13 +154,13 @@ export function NoteEditor({
         </div>
       </div>
 
-      <div className={`${styles.body} ${showKeywords ? styles.withKeywords : ""}`}>
+      <div className={`${styles.body} ${showKeywords && !esGastos ? styles.withKeywords : ""}`}>
         <div className={styles.main}>
           <div className={styles.inner}>
             <input
               className={styles.titleInput}
               value={title}
-              placeholder="Sin titulo"
+              placeholder={esGastos ? "Gastos" : "Sin titulo"}
               onChange={(e) => {
                 setTitle(e.target.value);
                 scheduleSave({ title: e.target.value });
@@ -162,30 +168,40 @@ export function NoteEditor({
             />
             {/* key={note.id}: al cambiar de nota, el editor se reinicia
                 limpio con el contenido de la nota nueva. */}
-            <Editor
-              key={note.id}
-              content={note.content}
-              onChange={(html) => scheduleSave({ content: html })}
-              onUploadImage={onUploadImage}
-            />
+            {esGastos ? (
+              <GastosEditor
+                key={note.id}
+                content={note.content}
+                onChange={(json) => scheduleSave({ content: json })}
+              />
+            ) : (
+              <Editor
+                key={note.id}
+                content={note.content}
+                onChange={(html) => scheduleSave({ content: html })}
+                onUploadImage={onUploadImage}
+              />
+            )}
           </div>
         </div>
 
         {/* Panel de keywords: aclaraciones/definiciones atadas a la nota.
             En desktop va a la derecha siempre; en movil se abre con la
-            opcion "Keywords" del menu de acciones. */}
-        <aside className={styles.keywords}>
-          <div className={styles.keywordsHeader}>Keywords</div>
-          <textarea
-            className={styles.keywordsInput}
-            value={keywords}
-            placeholder="Términos, definiciones, aclaraciones de conceptos…"
-            onChange={(e) => {
-              setKeywords(e.target.value);
-              scheduleSave({ keywords: e.target.value });
-            }}
-          />
-        </aside>
+            opcion "Keywords" del menu de acciones. No aplica a notas de gastos. */}
+        {!esGastos && (
+          <aside className={styles.keywords}>
+            <div className={styles.keywordsHeader}>Keywords</div>
+            <textarea
+              className={styles.keywordsInput}
+              value={keywords}
+              placeholder="Términos, definiciones, aclaraciones de conceptos…"
+              onChange={(e) => {
+                setKeywords(e.target.value);
+                scheduleSave({ keywords: e.target.value });
+              }}
+            />
+          </aside>
+        )}
       </div>
     </main>
   );

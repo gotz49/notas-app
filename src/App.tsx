@@ -20,7 +20,7 @@ import { NoteList } from "./components/notes/NoteList";
 import { NoteEditor } from "./components/notes/NoteEditor";
 import { ShortcutsHelp } from "./components/notes/ShortcutsHelp";
 import { Spinner } from "./components/ui/Spinner";
-import type { Note } from "./types";
+import type { Note, NoteKind } from "./types";
 import styles from "./App.module.css";
 
 export default function App() {
@@ -74,8 +74,8 @@ export default function App() {
   // 3) Logueado: app principal.
   const activeNote = notes.find((n) => n.id === activeId) ?? null;
 
-  async function handleCreate() {
-    const nueva = await create();
+  async function handleCreate(kind: NoteKind = "nota") {
+    const nueva = await create(kind);
     if (nueva) setActiveId(nueva.id);
     setMobileView("editor"); // en movil, saltar al editor de la nota nueva
   }

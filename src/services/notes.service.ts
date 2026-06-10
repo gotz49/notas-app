@@ -5,7 +5,8 @@
 //  CRUD = Create, Read, Update, Delete (crear, leer, editar, borrar).
 // ============================================================
 import { supabase } from "../lib/supabase";
-import type { Note, NoteUpdate } from "../types";
+import type { Note, NoteKind, NoteUpdate } from "../types";
+import { gastosInicial, serializeGastos } from "../lib/gastos";
 
 // READ: traer todas las notas del usuario. Las fijadas van primero y,
 // dentro de cada grupo, las mas nuevas arriba.
@@ -19,11 +20,21 @@ export async function fetchNotes(): Promise<Note[]> {
   return data ?? [];
 }
 
-// CREATE: crear una nota vacia para el usuario indicado.
-export async function createNote(userId: string): Promise<Note> {
+// CREATE: crear una nota vacia para el usuario indicado. Segun `kind` arranca
+// como nota normal (HTML vacio) o como nota de gastos (JSON con una lista).
+export async function createNote(
+  userId: string,
+  kind: NoteKind = "nota"
+): Promise<Note> {
+  const esGastos = kind === "gastos";
   const { data, error } = await supabase
     .from("notes")
-    .insert({ user_id: userId, title: "Sin titulo", content: "" })
+    .insert({
+      user_id: userId,
+      kind,
+      title: esGastos ? "Gastos" : "Sin titulo",
+      content: esGastos ? serializeGastos(gastosInicial()) : "",
+    })
     .select()
     .single();
   if (error) throw error;
