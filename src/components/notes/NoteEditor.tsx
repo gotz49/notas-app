@@ -16,7 +16,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Note, NoteUpdate } from "../../types";
 import { Button } from "../ui/Button";
-import { Editor } from "./Editor";
+import { Editor, type EditorHandle } from "./Editor";
 import { GastosEditor } from "./GastosEditor";
 import { PesoEditor } from "./PesoEditor";
 import { NoteActionsMenu } from "./NoteActionsMenu";
@@ -55,6 +55,9 @@ export function NoteEditor({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [menuOpen, setMenuOpen] = useState(false); // menu hamburguesa de acciones
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Ref al editor de texto para abrir el menu de formato desde el boton "Aa"
+  // de la barra (asi el long-press queda libre para la seleccion nativa).
+  const editorRef = useRef<EditorHandle>(null);
 
   // Cuando cambia la nota seleccionada, sincronizamos los campos locales y
   // reseteamos el indicador de guardado y el menu de acciones.
@@ -127,6 +130,20 @@ export function NoteEditor({
           )}
         </span>
 
+        {/* Boton de formato: abre el menu sobre la seleccion. Solo en notas de
+            texto (gastos/peso no tienen formato). En movil deja el long-press
+            libre para la seleccion nativa. */}
+        {esTexto && (
+          <Button
+            variant="ghost"
+            className={styles.formatBtn}
+            aria-label="Formato de texto"
+            onClick={() => editorRef.current?.openFormatMenu()}
+          >
+            Aa
+          </Button>
+        )}
+
         {/* Derecha: menu hamburguesa con todas las acciones de la nota */}
         <div className={styles.menuWrap}>
           <Button
@@ -188,6 +205,7 @@ export function NoteEditor({
             ) : (
               <Editor
                 key={note.id}
+                ref={editorRef}
                 content={note.content}
                 onChange={(html) => scheduleSave({ content: html })}
                 onUploadImage={onUploadImage}

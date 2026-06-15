@@ -1,10 +1,13 @@
 .editor {
   flex: 1;
   height: 100vh;
+  height: 100dvh; /* dvh = alto real visible en movil (sin la barra del navegador) */
   display: flex;
   flex-direction: column;
   background: var(--color-bg);
 }
+/* La barra superior queda fija: vive fuera del area que scrollea (.main), y no
+   se encoge, asi sigue visible al recorrer una nota larga. */
 .toolbar {
   display: flex;
   align-items: center;
@@ -13,6 +16,17 @@
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-lg);
   border-bottom: 1px solid var(--color-line);
+  flex-shrink: 0;
+  background: var(--color-bg);
+}
+/* Boton "Aa" de formato (notas de texto). */
+.formatBtn {
+  flex-shrink: 0;
+  min-width: 38px;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  line-height: 1;
 }
 /* Slot central del estado de guardado: ocupa el espacio entre el boton de
    volver (movil) y la hamburguesa, y centra el texto. */

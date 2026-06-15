@@ -9,6 +9,8 @@
 .app {
   display: flex;
   height: 100vh;
+  height: 100dvh; /* dvh = alto real visible en movil; evita que la pagina scrollee
+                     y se "vaya" la barra superior del editor */
   overflow: hidden;
 }
 

@@ -13,7 +13,7 @@
 //  queda solo un <img src="url">. Por eso el contenido se guarda
 //  como HTML.
 // ============================================================
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { useEditor, EditorContent, type Editor as TipTapEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -28,8 +28,13 @@ type Props = {
   onUploadImage?: (file: File) => Promise<string>;
 };
 
-// Posicion del menu contextual (o null si esta cerrado)
-type MenuPos = { x: number; y: number } | null;
+// Estado del menu contextual (o null si esta cerrado). `centered` = mostrarlo
+// centrado en pantalla (cuando lo abre el boton "Aa" de la barra, no el cursor).
+type MenuPos = { x: number; y: number; centered: boolean } | null;
+
+// API imperativa que el editor expone al padre (NoteEditor) para abrir el menu
+// de formato desde el boton de la barra superior.
+export type EditorHandle = { openFormatMenu: () => void };
 
 // De un DataTransfer/Clipboard, devuelve solo los archivos de imagen.
 function imageFiles(dt: DataTransfer | null): File[] {
@@ -37,7 +42,10 @@ function imageFiles(dt: DataTransfer | null): File[] {
   return Array.from(dt.files).filter((f) => f.type.startsWith("image/"));
 }
 
-export function Editor({ content, onChange, onUploadImage }: Props) {
+export const Editor = forwardRef<EditorHandle, Props>(function Editor(
+  { content, onChange, onUploadImage },
+  ref
+) {
   const [menu, setMenu] = useState<MenuPos>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   // Funcion "subir + insertar". Vive en un ref porque los handlers de
@@ -105,11 +113,20 @@ export function Editor({ content, onChange, onUploadImage }: Props) {
     };
   }, [menu]);
 
+  // El padre (NoteEditor) abre el menu de formato desde el boton "Aa" de la
+  // barra: se muestra centrado y actua sobre la seleccion actual del editor.
+  useImperativeHandle(ref, () => ({
+    openFormatMenu: () => setMenu({ x: 0, y: 0, centered: true }),
+  }), []);
+
   if (!editor) return null;
 
   function openMenu(e: React.MouseEvent) {
-    e.preventDefault(); // reemplaza el menu nativo del navegador
-    setMenu({ x: e.clientX, y: e.clientY });
+    // En movil dejamos el long-press NATIVO (seleccionar texto + copiar/pegar
+    // del sistema); el menu de formato se abre con el boton "Aa" de la barra.
+    if (!window.matchMedia("(min-width: 769px)").matches) return;
+    e.preventDefault(); // en desktop, reemplaza el menu nativo del navegador
+    setMenu({ x: e.clientX, y: e.clientY, centered: false });
   }
 
   return (
@@ -138,7 +155,7 @@ export function Editor({ content, onChange, onUploadImage }: Props) {
       />
     </div>
   );
-}
+});
 
 // ---- Menu contextual (clic derecho) -------------------------
 function ContextMenu({
@@ -148,20 +165,21 @@ function ContextMenu({
   onClose,
 }: {
   editor: TipTapEditor;
-  pos: { x: number; y: number };
+  pos: { x: number; y: number; centered: boolean };
   onImage?: () => void;
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
-  // En movil el menu va SIEMPRE centrado en pantalla (con fondo atenuado), asi
-  // se ve completo sin importar donde tocaste. En desktop sigue junto al cursor,
-  // pero reubicado para que entre: si se saldria por el borde derecho/inferior
-  // lo corremos hacia adentro (y si es mas alto que la pantalla, el CSS scrollea).
+  // El menu va centrado en pantalla (con fondo atenuado) cuando lo abre el boton
+  // "Aa" de la barra, y SIEMPRE en movil. En desktop con clic derecho sigue
+  // junto al cursor, pero reubicado para que entre: si se saldria por el borde
+  // derecho/inferior lo corremos hacia adentro (y si no entra en alto, scrollea).
   const isMobile = !window.matchMedia("(min-width: 769px)").matches;
+  const useCentered = isMobile || pos.centered;
   const [coords, setCoords] = useState<{ left: number; top: number } | null>(null);
   useLayoutEffect(() => {
-    if (isMobile) return; // en movil va centrado, no hace falta medir
+    if (useCentered) return; // centrado: no hace falta medir
     const el = ref.current;
     if (!el) return;
     const margen = 8;
@@ -175,11 +193,11 @@ function ContextMenu({
     if (top + height + margen > vh) top = vh - height - margen;
     if (top < margen) top = margen;
     setCoords({ left, top });
-  }, [pos, isMobile]);
+  }, [pos, useCentered]);
 
-  // En desktop, hasta tener la posicion corregida lo dibujamos oculto en el
-  // punto del toque (asi se puede medir su tamano sin que se vea un salto).
-  const style: CSSProperties = isMobile
+  // En el modo anclado, hasta tener la posicion corregida lo dibujamos oculto
+  // en el punto del toque (asi se mide su tamano sin que se vea un salto).
+  const style: CSSProperties = useCentered
     ? { top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "min(320px, calc(100vw - 32px))" }
     : coords
       ? { left: coords.left, top: coords.top }
@@ -220,8 +238,8 @@ function ContextMenu({
 
   return (
     <>
-      {/* En movil, fondo atenuado detras del menu centrado (tap afuera = cerrar). */}
-      {isMobile && <div className={styles.backdrop} onClick={onClose} />}
+      {/* Fondo atenuado detras del menu centrado (tap afuera = cerrar). */}
+      {useCentered && <div className={styles.backdrop} onClick={onClose} />}
       <div
         ref={ref}
         className={styles.menu}
