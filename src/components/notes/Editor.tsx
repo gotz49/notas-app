@@ -13,7 +13,8 @@
 //  queda solo un <img src="url">. Por eso el contenido se guarda
 //  como HTML.
 // ============================================================
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { useEditor, EditorContent, type Editor as TipTapEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -153,6 +154,33 @@ function ContextMenu({
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
+  // Reubica el menu para que entre SIEMPRE en pantalla. Se abre en el punto del
+  // toque (pos), pero si se saldria por el borde derecho/inferior lo corremos
+  // hacia adentro; si es mas alto que la pantalla, el CSS lo deja scrollear.
+  // Importante en movil: el long-press cerca de un borde dejaba el menu cortado.
+  const [coords, setCoords] = useState<{ left: number; top: number } | null>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const margen = 8;
+    const { width, height } = el.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    let left = pos.x;
+    let top = pos.y;
+    if (left + width + margen > vw) left = vw - width - margen;
+    if (left < margen) left = margen;
+    if (top + height + margen > vh) top = vh - height - margen;
+    if (top < margen) top = margen;
+    setCoords({ left, top });
+  }, [pos]);
+
+  // Hasta tener la posicion corregida, lo dibujamos oculto en el punto del toque
+  // (asi se puede medir su tamano sin que se vea un salto).
+  const style: CSSProperties = coords
+    ? { left: coords.left, top: coords.top }
+    : { left: pos.x, top: pos.y, visibility: "hidden" };
+
   // Cada item ejecuta un comando de TipTap sobre la seleccion actual.
   const run = (fn: () => void) => () => {
     fn();
@@ -190,7 +218,7 @@ function ContextMenu({
     <div
       ref={ref}
       className={styles.menu}
-      style={{ top: pos.y, left: pos.x }}
+      style={style}
       // Evita que el clic dentro del menu lo cierre antes de actuar
       onClick={(e) => e.stopPropagation()}
     >

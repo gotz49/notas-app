@@ -82,6 +82,12 @@
   box-shadow: var(--shadow);
   padding: var(--space-xs);
   animation: fadeIn 0.12s ease both;
+  /* Si el menu es mas alto que la pantalla (p. ej. en movil con todas las
+     opciones), se limita al alto visible y scrollea en vez de cortarse.
+     dvh sigue la altura real del navegador movil (sin contar la barra). */
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .item {
   display: flex;
