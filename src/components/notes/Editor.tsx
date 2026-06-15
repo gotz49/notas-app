@@ -154,12 +154,14 @@ function ContextMenu({
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
-  // Reubica el menu para que entre SIEMPRE en pantalla. Se abre en el punto del
-  // toque (pos), pero si se saldria por el borde derecho/inferior lo corremos
-  // hacia adentro; si es mas alto que la pantalla, el CSS lo deja scrollear.
-  // Importante en movil: el long-press cerca de un borde dejaba el menu cortado.
+  // En movil el menu va SIEMPRE centrado en pantalla (con fondo atenuado), asi
+  // se ve completo sin importar donde tocaste. En desktop sigue junto al cursor,
+  // pero reubicado para que entre: si se saldria por el borde derecho/inferior
+  // lo corremos hacia adentro (y si es mas alto que la pantalla, el CSS scrollea).
+  const isMobile = !window.matchMedia("(min-width: 769px)").matches;
   const [coords, setCoords] = useState<{ left: number; top: number } | null>(null);
   useLayoutEffect(() => {
+    if (isMobile) return; // en movil va centrado, no hace falta medir
     const el = ref.current;
     if (!el) return;
     const margen = 8;
@@ -173,13 +175,15 @@ function ContextMenu({
     if (top + height + margen > vh) top = vh - height - margen;
     if (top < margen) top = margen;
     setCoords({ left, top });
-  }, [pos]);
+  }, [pos, isMobile]);
 
-  // Hasta tener la posicion corregida, lo dibujamos oculto en el punto del toque
-  // (asi se puede medir su tamano sin que se vea un salto).
-  const style: CSSProperties = coords
-    ? { left: coords.left, top: coords.top }
-    : { left: pos.x, top: pos.y, visibility: "hidden" };
+  // En desktop, hasta tener la posicion corregida lo dibujamos oculto en el
+  // punto del toque (asi se puede medir su tamano sin que se vea un salto).
+  const style: CSSProperties = isMobile
+    ? { top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "min(320px, calc(100vw - 32px))" }
+    : coords
+      ? { left: coords.left, top: coords.top }
+      : { left: pos.x, top: pos.y, visibility: "hidden" };
 
   // Cada item ejecuta un comando de TipTap sobre la seleccion actual.
   const run = (fn: () => void) => () => {
@@ -215,13 +219,16 @@ function ContextMenu({
   };
 
   return (
-    <div
-      ref={ref}
-      className={styles.menu}
-      style={style}
-      // Evita que el clic dentro del menu lo cierre antes de actuar
-      onClick={(e) => e.stopPropagation()}
-    >
+    <>
+      {/* En movil, fondo atenuado detras del menu centrado (tap afuera = cerrar). */}
+      {isMobile && <div className={styles.backdrop} onClick={onClose} />}
+      <div
+        ref={ref}
+        className={styles.menu}
+        style={style}
+        // Evita que el clic dentro del menu lo cierre antes de actuar
+        onClick={(e) => e.stopPropagation()}
+      >
       <div className={styles.actionsRow}>
         <button className={styles.actionBtn} onClick={act(copySelection)} disabled={!hasSelection}>Copiar</button>
         <button className={styles.actionBtn} onClick={act(pasteClipboard)}>Pegar</button>
@@ -249,7 +256,8 @@ function ContextMenu({
       )}
       <div className={styles.sep} />
       <MenuItem label="Limpiar formato" onClick={run(() => editor.chain().focus().unsetAllMarks().clearNodes().run())} />
-    </div>
+      </div>
+    </>
   );
 }
 

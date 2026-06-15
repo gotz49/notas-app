@@ -1,6 +1,14 @@
 /* ---- Menu de acciones de una nota (hamburguesa y clic derecho) ---- */
 /* La posicion la fija el padre via `style` (fixed en la lista de notas,
-   absolute como desplegable bajo el boton en el editor). */
+   absolute como desplegable bajo el boton en el editor). En movil se
+   sobreescribe para centrarlo en pantalla (ver NoteActionsMenu.tsx). */
+/* Fondo atenuado detras del menu cuando va centrado (movil). */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(32, 32, 29, 0.35);
+  z-index: 99;
+}
 .menu {
   z-index: 100;
   min-width: 180px;

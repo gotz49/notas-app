@@ -65,9 +65,26 @@ export function NoteActionsMenu({
     onClose();
   };
 
+  // En movil el menu va centrado en pantalla (con fondo atenuado), asi se ve
+  // completo sin importar donde tocaste; en desktop sigue donde lo pone el
+  // padre via `style` (junto al cursor o bajo el boton hamburguesa).
+  const isMobile = !window.matchMedia("(min-width: 769px)").matches;
+  const finalStyle: CSSProperties | undefined = isMobile
+    ? {
+        position: "fixed",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: "min(320px, calc(100vw - 32px))",
+      }
+    : style;
+
   return (
-    // stopPropagation: que un clic dentro del menu no lo cierre antes de actuar.
-    <div className={styles.menu} style={style} onClick={(e) => e.stopPropagation()}>
+    <>
+      {/* En movil, fondo atenuado detras del menu centrado (tap afuera = cerrar). */}
+      {isMobile && <div className={styles.backdrop} onClick={onClose} />}
+      {/* stopPropagation: que un clic dentro del menu no lo cierre antes de actuar. */}
+      <div className={styles.menu} style={finalStyle} onClick={(e) => e.stopPropagation()}>
       {showKeywordsItem && (
         <button className={styles.item} onClick={run(onKeywords)}>{keywordsLabel}</button>
       )}
@@ -88,6 +105,7 @@ export function NoteActionsMenu({
       ) : (
         <button className={`${styles.item} ${styles.danger}`} onClick={() => setConfirmDelete(true)}>Borrar</button>
       )}
-    </div>
+      </div>
+    </>
   );
 }
