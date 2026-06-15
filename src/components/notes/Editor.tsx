@@ -119,6 +119,7 @@ export function Editor({ content, onChange, onUploadImage }: Props) {
           editor={editor}
           pos={menu}
           onImage={onUploadImage ? () => fileInput.current?.click() : undefined}
+          onClose={() => setMenu(null)}
         />
       )}
       {/* Selector de archivo oculto, disparado por la opcion "Insertar imagen". */}
@@ -143,10 +144,12 @@ function ContextMenu({
   editor,
   pos,
   onImage,
+  onClose,
 }: {
   editor: TipTapEditor;
   pos: { x: number; y: number };
   onImage?: () => void;
+  onClose: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -154,6 +157,33 @@ function ContextMenu({
   const run = (fn: () => void) => () => {
     fn();
     editor.chain().focus().run();
+  };
+
+  // Copiar/Pegar/Seleccionar todo: en Android el long-press abre este menu en
+  // vez del nativo, asi que estas tres acciones replican lo que ahi faltaria.
+  // (En PC se hacen con el teclado.) Usan la Clipboard API; corre en contexto
+  // seguro (la PWA va por https), si no hay permiso fallan en silencio.
+  const hasSelection = !editor.state.selection.empty;
+  async function copySelection() {
+    if (!hasSelection) return;
+    const { from, to } = editor.state.selection;
+    const text = editor.state.doc.textBetween(from, to, "\n");
+    try {
+      await navigator.clipboard?.writeText(text);
+    } catch { /* sin permiso de portapapeles */ }
+  }
+  async function pasteClipboard() {
+    try {
+      const text = await navigator.clipboard?.readText();
+      if (text) editor.chain().focus().insertContent(text).run();
+    } catch { /* sin permiso o portapapeles vacio */ }
+  }
+
+  // Estas tres cierran el menu al terminar (a diferencia de los formatos, que
+  // quedan abiertos para encadenar varios).
+  const act = (fn: () => unknown) => () => {
+    void fn();
+    onClose();
   };
 
   return (
@@ -164,6 +194,12 @@ function ContextMenu({
       // Evita que el clic dentro del menu lo cierre antes de actuar
       onClick={(e) => e.stopPropagation()}
     >
+      <div className={styles.actionsRow}>
+        <button className={styles.actionBtn} onClick={act(copySelection)} disabled={!hasSelection}>Copiar</button>
+        <button className={styles.actionBtn} onClick={act(pasteClipboard)}>Pegar</button>
+        <button className={styles.actionBtn} onClick={act(() => editor.chain().focus().selectAll().run())}>Sel. todo</button>
+      </div>
+      <div className={styles.sep} />
       <MenuItem label="Negrita" hint="Cmd/Ctrl+B" onClick={run(() => editor.chain().focus().toggleBold().run())} active={editor.isActive("bold")} />
       <MenuItem label="Cursiva" hint="Cmd/Ctrl+I" onClick={run(() => editor.chain().focus().toggleItalic().run())} active={editor.isActive("italic")} />
       <MenuItem label="Tachado" onClick={run(() => editor.chain().focus().toggleStrike().run())} active={editor.isActive("strike")} />

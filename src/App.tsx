@@ -11,7 +11,7 @@
 //  keywords y del panel de atajos. Asi una misma accion (p. ej.
 //  "Keywords") se dispara desde los dos lugares.
 // ============================================================
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "./hooks/useAuth";
 import { useNotes } from "./hooks/useNotes";
 import { signOut } from "./services/auth.service";
@@ -64,6 +64,40 @@ export default function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [showHelp, activeId]);
+
+  // Boton/gesto "atras" de Android (deslizar desde el borde). El sistema lo
+  // convierte en una navegacion del historial, no en un evento tactil; por eso
+  // se maneja con la History API y no detectando el swipe a mano. Al abrir una
+  // nota metemos una entrada de historial; al apretar atras, popstate nos trae
+  // de vuelta al listado en vez de cerrar la PWA.
+  const noteOpenRef = useRef(false);
+  useEffect(() => {
+    function onPop() {
+      if (noteOpenRef.current) {
+        noteOpenRef.current = false; // el navegador ya consumio la entrada
+        setActiveId(null);
+        setMobileView("list");
+      }
+    }
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  // Mantiene el historial en sync con la nota abierta: una entrada por nota.
+  useEffect(() => {
+    const open = activeId !== null;
+    if (open && !noteOpenRef.current) {
+      noteOpenRef.current = true;
+      history.pushState({ noteOpen: true }, "");
+    } else if (!open && noteOpenRef.current) {
+      // La nota se cerro desde la UI (Esc, "← Notas", borrar): consumimos la
+      // entrada que habiamos metido para que el historial no quede desfasado.
+      // El history.back() dispara popstate, pero onPop ya no hace nada porque
+      // noteOpenRef quedo en false.
+      noteOpenRef.current = false;
+      history.back();
+    }
+  }, [activeId]);
 
   // 1) Esperando saber si hay sesion.
   if (authLoading) return <Spinner center />;
