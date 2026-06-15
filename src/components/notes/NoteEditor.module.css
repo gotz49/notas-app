@@ -74,7 +74,15 @@
   width: 100%;
   max-width: 720px;
   padding: var(--space-xl) var(--space-lg);
-  animation: fadeIn 0.3s ease both;
+  /* Solo opacidad: NO usar un fade con transform aca. Un transform residual
+     (aunque sea translateY(0) por el fill-mode) convierte a .inner en el bloque
+     contenedor de los position:fixed hijos (el menu de formato), y el menu
+     terminaria posicionado relativo a .inner en vez del viewport. */
+  animation: innerFade 0.3s ease both;
+}
+@keyframes innerFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 /* --- Panel de keywords (columna derecha) --- */

@@ -138,7 +138,10 @@ export function NoteEditor({
             variant="ghost"
             className={styles.formatBtn}
             aria-label="Formato de texto"
-            onClick={() => editorRef.current?.openFormatMenu()}
+            onClick={(e) => {
+              e.stopPropagation(); // que el clic que lo abre no lo cierre
+              editorRef.current?.openFormatMenu();
+            }}
           >
             Aa
           </Button>

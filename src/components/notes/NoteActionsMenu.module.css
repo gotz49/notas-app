@@ -17,7 +17,13 @@
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: var(--space-xs);
-  animation: fadeIn 0.12s ease both;
+  /* Fade de solo opacidad: en movil el menu se centra con transform y un fade
+     con transform lo pisaria (ver menuFade). */
+  animation: menuFade 0.12s ease both;
+}
+@keyframes menuFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 .item {
   display: flex;
