@@ -38,6 +38,7 @@ Campos clave: `id`, `user_id`, `kind`, `title`, `content`, `pinned`, `keywords`,
 
 ### `nota` — texto enriquecido
 - `content` = **HTML** (no Markdown). Editor TipTap/StarterKit (`components/notes/Editor.tsx`); el Markdown es solo atajo al tipear.
+- **Formato**: menú con Negrita/Títulos/Listas/etc. (`ContextMenu` en `Editor.tsx`). Se abre con **clic derecho** (desktop) o el botón **Aa** de la barra (sobre todo móvil). En móvil el long-press queda libre para la **selección nativa** de Android (copiar/pegar del sistema); el botón Aa cierra ese popup nativo (`blur` + `removeAllRanges`, la selección la conserva ProseMirror) y aplica el formato sobre lo seleccionado. Los menús flotantes se **centran en pantalla** en móvil.
 - **Imágenes**: no van en la base. Se suben al bucket público `imagenes` de Storage (comprimidas a WebP en el cliente), y en el HTML queda `<img src="url">`. Borrar la nota limpia sus imágenes (best-effort).
 - Tiene panel lateral de **keywords** (aclaraciones atadas a la nota).
 
@@ -60,6 +61,7 @@ Campos clave: `id`, `user_id`, `kind`, `title`, `content`, `pinned`, `keywords`,
 - **Export**: el menú de acciones llama `onExport` (lo rutea `App.handleExport`). Nota normal → `.txt` y gastos → `.xls` van directo por `components/notes/exportNote.ts`; **peso → PNG** abre el modal `PesoExportDialog.tsx` (rango de fechas + gráfico).
 - **Gesto/botón atrás de Android** (`App.tsx`): al abrir una nota se mete una entrada de historial (`pushState`); el gesto de borde dispara `popstate` y vuelve al listado en vez de cerrar la PWA.
 - **Menú de acciones** (`NoteActionsMenu.tsx`) compartido entre la hamburguesa del editor y el clic derecho de la lista.
+- **Layout app-shell**: `html`/`body` con `overflow:hidden` y todo a `height:100%`; el único que scrollea es `.main` (cuerpo de la nota), así la **barra superior del editor queda fija** siempre. ⚠️ Un menú `position:fixed` se rompe si un ancestro tiene `transform` (pasa a ser su bloque contenedor y el menú queda fuera de pantalla): por eso `.inner` y los `.menu` usan fades de **solo opacidad**, sin transform.
 - `<Editor key={note.id}>` / `<GastosEditor key={note.id}>` / `<PesoEditor key={note.id}>` — el `key` fuerza remount al cambiar de nota; no quitarlo.
 
 ## Al cambiar la forma de los datos
