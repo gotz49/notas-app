@@ -18,8 +18,8 @@ import type { Note, NoteUpdate } from "../../types";
 import { Button } from "../ui/Button";
 import { Editor } from "./Editor";
 import { GastosEditor } from "./GastosEditor";
+import { PesoEditor } from "./PesoEditor";
 import { NoteActionsMenu } from "./NoteActionsMenu";
-import { exportNote } from "./exportNote";
 import styles from "./NoteEditor.module.css";
 
 // Estado del indicador de guardado que se muestra en la toolbar.
@@ -35,6 +35,7 @@ type Props = {
   showKeywords: boolean;
   onToggleKeywords: () => void;
   onShowHelp: () => void;
+  onExport: (note: Note) => void; // lo maneja App (nota/gastos: descarga; peso: dialogo)
   onUploadImage: (file: File) => Promise<string>; // sube imagen -> URL publica
 };
 
@@ -46,6 +47,7 @@ export function NoteEditor({
   showKeywords,
   onToggleKeywords,
   onShowHelp,
+  onExport,
   onUploadImage,
 }: Props) {
   const [title, setTitle] = useState("");
@@ -102,9 +104,12 @@ export function NoteEditor({
     );
   }
 
-  // Las notas de gastos usan un editor distinto (listas con checks y montos)
-  // y no tienen panel de keywords ni imagenes.
+  // Cada tipo usa su editor. Solo la nota de texto ("nota") tiene panel de
+  // keywords e imagenes; gastos y peso no.
   const esGastos = note.kind === "gastos";
+  const esPeso = note.kind === "peso";
+  const esTexto = note.kind === "nota";
+  const placeholderTitulo = esGastos ? "Gastos" : esPeso ? "Peso" : "Sin titulo";
 
   return (
     <main className={styles.editor}>
@@ -141,12 +146,12 @@ export function NoteEditor({
             <NoteActionsMenu
               note={note}
               style={{ position: "absolute", top: "calc(100% + 6px)", right: 0 }}
-              showKeywordsItem={!esGastos}
+              showKeywordsItem={esTexto}
               keywordsLabel={showKeywords ? "Ocultar keywords" : "Keywords"}
               onKeywords={onToggleKeywords}
               onHelp={onShowHelp}
               onTogglePin={() => void commitSave(note.id, { pinned: !note.pinned })}
-              onExport={() => exportNote(note)}
+              onExport={() => onExport(note)}
               onDelete={() => onDelete(note.id)}
               onClose={() => setMenuOpen(false)}
             />
@@ -154,13 +159,13 @@ export function NoteEditor({
         </div>
       </div>
 
-      <div className={`${styles.body} ${showKeywords && !esGastos ? styles.withKeywords : ""}`}>
+      <div className={`${styles.body} ${showKeywords && esTexto ? styles.withKeywords : ""}`}>
         <div className={styles.main}>
           <div className={styles.inner}>
             <input
               className={styles.titleInput}
               value={title}
-              placeholder={esGastos ? "Gastos" : "Sin titulo"}
+              placeholder={placeholderTitulo}
               onChange={(e) => {
                 setTitle(e.target.value);
                 scheduleSave({ title: e.target.value });
@@ -170,6 +175,12 @@ export function NoteEditor({
                 limpio con el contenido de la nota nueva. */}
             {esGastos ? (
               <GastosEditor
+                key={note.id}
+                content={note.content}
+                onChange={(json) => scheduleSave({ content: json })}
+              />
+            ) : esPeso ? (
+              <PesoEditor
                 key={note.id}
                 content={note.content}
                 onChange={(json) => scheduleSave({ content: json })}
@@ -187,8 +198,8 @@ export function NoteEditor({
 
         {/* Panel de keywords: aclaraciones/definiciones atadas a la nota.
             En desktop va a la derecha siempre; en movil se abre con la
-            opcion "Keywords" del menu de acciones. No aplica a notas de gastos. */}
-        {!esGastos && (
+            opcion "Keywords" del menu de acciones. Solo en notas de texto. */}
+        {esTexto && (
           <aside className={styles.keywords}>
             <div className={styles.keywordsHeader}>Keywords</div>
             <textarea

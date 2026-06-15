@@ -30,7 +30,9 @@ alter table public.notes
 alter table public.notes
   add column if not exists keywords text not null default '';
 -- kind: tipo de nota. 'nota' = texto enriquecido (HTML en content);
--- 'gastos' = lista de gastos (JSON en content). Ver src/types/index.ts.
+-- 'gastos' = lista de gastos (JSON); 'peso' = registros de peso (JSON).
+-- Es texto libre (sin CHECK), asi que sumar tipos nuevos NO requiere migracion.
+-- Ver src/types/index.ts.
 alter table public.notes
   add column if not exists kind text not null default 'nota';
 

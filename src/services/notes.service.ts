@@ -7,6 +7,7 @@
 import { supabase } from "../lib/supabase";
 import type { Note, NoteKind, NoteUpdate } from "../types";
 import { gastosInicial, serializeGastos } from "../lib/gastos";
+import { pesoInicial, serializePeso } from "../lib/peso";
 
 // READ: traer todas las notas del usuario. Las fijadas van primero y,
 // dentro de cada grupo, las mas nuevas arriba.
@@ -21,19 +22,29 @@ export async function fetchNotes(): Promise<Note[]> {
 }
 
 // CREATE: crear una nota vacia para el usuario indicado. Segun `kind` arranca
-// como nota normal (HTML vacio) o como nota de gastos (JSON con una lista).
+// como nota normal (HTML vacio), de gastos (JSON con una lista) o de peso
+// (JSON con la lista de registros vacia).
+const TITULO_INICIAL: Record<NoteKind, string> = {
+  nota: "Sin titulo",
+  gastos: "Gastos",
+  peso: "Peso",
+};
+function contenidoInicial(kind: NoteKind): string {
+  if (kind === "gastos") return serializeGastos(gastosInicial());
+  if (kind === "peso") return serializePeso(pesoInicial());
+  return "";
+}
 export async function createNote(
   userId: string,
   kind: NoteKind = "nota"
 ): Promise<Note> {
-  const esGastos = kind === "gastos";
   const { data, error } = await supabase
     .from("notes")
     .insert({
       user_id: userId,
       kind,
-      title: esGastos ? "Gastos" : "Sin titulo",
-      content: esGastos ? serializeGastos(gastosInicial()) : "",
+      title: TITULO_INICIAL[kind],
+      content: contenidoInicial(kind),
     })
     .select()
     .single();

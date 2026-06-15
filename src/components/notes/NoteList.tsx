@@ -9,7 +9,6 @@ import type { Note, NoteKind } from "../../types";
 import { Button } from "../ui/Button";
 import { NoteListItem } from "./NoteListItem";
 import { NoteActionsMenu } from "./NoteActionsMenu";
-import { exportNote } from "./exportNote";
 import styles from "./NoteList.module.css";
 import { ThemeToggle } from "../ui/ThemeToggle";
 
@@ -25,6 +24,7 @@ type Props = {
   onDelete: (id: string) => void;
   onShowHelp: () => void;
   onOpenKeywords: (id: string) => void;
+  onExport: (note: Note) => void;
 };
 
 export function NoteList({
@@ -38,6 +38,7 @@ export function NoteList({
   onDelete,
   onShowHelp,
   onOpenKeywords,
+  onExport,
 }: Props) {
   // Menu contextual de clic derecho: la nota apuntada y su posicion.
   const [menu, setMenu] = useState<{ note: Note; x: number; y: number } | null>(
@@ -143,6 +144,15 @@ export function NoteList({
                 >
                   💲 Lista de gastos
                 </button>
+                <button
+                  className={styles.createItem}
+                  onClick={() => {
+                    setCreateOpen(false);
+                    onCreate("peso");
+                  }}
+                >
+                  ⚖️ Registro de peso
+                </button>
               </div>
             )}
           </div>
@@ -194,7 +204,7 @@ export function NoteList({
           onKeywords={() => onOpenKeywords(menu.note.id)}
           onHelp={onShowHelp}
           onTogglePin={() => onTogglePin(menu.note)}
-          onExport={() => exportNote(menu.note)}
+          onExport={() => onExport(menu.note)}
           onDelete={() => onDelete(menu.note.id)}
           onClose={() => setMenu(null)}
         />

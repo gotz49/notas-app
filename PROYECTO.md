@@ -31,7 +31,7 @@ Una sola tabla. El esquema **no es automático**: pegar `supabase/schema.sql` en
 
 Campos clave: `id`, `user_id`, `kind`, `title`, `content`, `pinned`, `keywords`, `created_at`, `updated_at`.
 
-- **`kind`** (`'nota'` | `'gastos'`) define el tipo de nota y cómo se interpreta `content`.
+- **`kind`** (`'nota'` | `'gastos'` | `'peso'`) define el tipo de nota y cómo se interpreta `content`. Es texto libre (sin CHECK): sumar un tipo nuevo no requiere migración.
 - `updated_at` lo actualiza un trigger en la base.
 
 ## Tipos de nota
@@ -47,13 +47,20 @@ Campos clave: `id`, `user_id`, `kind`, `title`, `content`, `pinned`, `keywords`,
 - Editor: `components/notes/GastosEditor.tsx` — tabla **✓ pagado · concepto · monto**, agregar/borrar renglones y listas, **subtotal por lista** y **total general**. Pagado = renglón tachado.
 - Sin keywords ni imágenes.
 
+### `peso` — registro diario de peso (feature de jun-2026)
+- `content` = **JSON** con forma `PesoData`: lista de registros `{ fecha, peso }`. Cada registro lleva **su propia fecha** (`YYYY-MM-DD`), así se puede cargar un día olvidado o corregir cualquier valor. Tipos y helpers en `src/types/index.ts` y `src/lib/peso.ts`.
+- Se crea desde **+ Nueva → ⚖️ Registro de peso**; se distingue con ⚖️ en la lista.
+- Editor: `components/notes/PesoEditor.tsx` — **form** de carga (fecha + peso) arriba; **listado** editable/borrable abajo, del más reciente al más viejo. Sin keywords ni imágenes.
+- **Export = imagen** (no `.xls`): `PesoExportDialog.tsx` abre un modal para elegir **rango de fechas** (presets 7/30 días/todo), muestra vista previa y descarga/comparte un **PNG** con un gráfico de línea (eje X = tiempo, eje Y = peso con margen automático). El gráfico lo pinta `src/lib/pesoChart.ts` en `<canvas>`, sin dependencias.
+
 ## Funcionamiento clave
 
 - **Autosave** con debounce 600ms (`NoteEditor.tsx`). Updates **optimistas** en `useNotes` (mutan estado local antes de confirmar).
 - **Realtime = recarga completa**: cualquier insert/update/delete dispara un `fetchNotes` entero (`subscribeToNotes`).
-- **Export** (`components/notes/exportNote.ts`): nota normal → `.txt`; nota de gastos → `.xls` (documento HTML que Excel/Sheets abren como planilla, con columnas y totales calculados, sin dependencias).
+- **Export**: el menú de acciones llama `onExport` (lo rutea `App.handleExport`). Nota normal → `.txt` y gastos → `.xls` van directo por `components/notes/exportNote.ts`; **peso → PNG** abre el modal `PesoExportDialog.tsx` (rango de fechas + gráfico).
+- **Gesto/botón atrás de Android** (`App.tsx`): al abrir una nota se mete una entrada de historial (`pushState`); el gesto de borde dispara `popstate` y vuelve al listado en vez de cerrar la PWA.
 - **Menú de acciones** (`NoteActionsMenu.tsx`) compartido entre la hamburguesa del editor y el clic derecho de la lista.
-- `<Editor key={note.id}>` / `<GastosEditor key={note.id}>` — el `key` fuerza remount al cambiar de nota; no quitarlo.
+- `<Editor key={note.id}>` / `<GastosEditor key={note.id}>` / `<PesoEditor key={note.id}>` — el `key` fuerza remount al cambiar de nota; no quitarlo.
 
 ## Al cambiar la forma de los datos
 

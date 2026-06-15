@@ -19,6 +19,8 @@ import { LoginForm } from "./components/auth/LoginForm";
 import { NoteList } from "./components/notes/NoteList";
 import { NoteEditor } from "./components/notes/NoteEditor";
 import { ShortcutsHelp } from "./components/notes/ShortcutsHelp";
+import { PesoExportDialog } from "./components/notes/PesoExportDialog";
+import { exportNote } from "./components/notes/exportNote";
 import { Spinner } from "./components/ui/Spinner";
 import type { Note, NoteKind } from "./types";
 import styles from "./App.module.css";
@@ -32,6 +34,10 @@ export default function App() {
   const [mobileView, setMobileView] = useState<"list" | "editor">("list");
   // Panel de atajos (modal). Se abre desde el menu de acciones (editor y lista).
   const [showHelp, setShowHelp] = useState(false);
+  // Nota de peso que se esta exportando como imagen (o null si el dialogo esta
+  // cerrado). Las notas normales/gastos se exportan directo; las de peso abren
+  // este dialogo para elegir rango de fechas y ver la vista previa del grafico.
+  const [pesoExport, setPesoExport] = useState<Note | null>(null);
   // Visibilidad del panel de keywords. En desktop es una preferencia de layout
   // que se recuerda entre sesiones (localStorage) y arranca abierta; en movil
   // siempre arranca cerrada para ver primero el apunte. La alterna el menu de
@@ -52,6 +58,10 @@ export default function App() {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key !== "Escape") return;
+      if (pesoExport) {
+        setPesoExport(null);
+        return;
+      }
       if (showHelp) {
         setShowHelp(false);
         return;
@@ -63,7 +73,7 @@ export default function App() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [showHelp, activeId]);
+  }, [pesoExport, showHelp, activeId]);
 
   // Boton/gesto "atras" de Android (deslizar desde el borde). El sistema lo
   // convierte en una navegacion del historial, no en un evento tactil; por eso
@@ -136,6 +146,13 @@ export default function App() {
     void update(note.id, { pinned: !note.pinned });
   }
 
+  // Exportar una nota. Las de peso abren el dialogo de imagen (elegir rango +
+  // grafico); el resto se descargan directo (.txt / .xls).
+  function handleExport(note: Note) {
+    if (note.kind === "peso") setPesoExport(note);
+    else exportNote(note);
+  }
+
   return (
     <div className={`${styles.app} ${mobileView === "editor" ? styles.showEditor : ""}`}>
       <NoteList
@@ -149,6 +166,7 @@ export default function App() {
         onDelete={handleDelete}
         onShowHelp={() => setShowHelp(true)}
         onOpenKeywords={handleOpenKeywords}
+        onExport={handleExport}
       />
       {notesLoading ? (
         <Spinner center />
@@ -161,10 +179,14 @@ export default function App() {
           showKeywords={showKeywords}
           onToggleKeywords={() => setShowKeywords((v) => !v)}
           onShowHelp={() => setShowHelp(true)}
+          onExport={handleExport}
           onUploadImage={uploadImage}
         />
       )}
       {showHelp && <ShortcutsHelp onClose={() => setShowHelp(false)} />}
+      {pesoExport && (
+        <PesoExportDialog note={pesoExport} onClose={() => setPesoExport(null)} />
+      )}
     </div>
   );
 }

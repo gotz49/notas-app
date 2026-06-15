@@ -6,10 +6,12 @@
 //  + el editor te avisa si te equivocas de campo.
 // ============================================================
 
-// Tipo de nota. Una nota normal ("nota") guarda HTML enriquecido en `content`;
-// una nota de gastos ("gastos") guarda en `content` un JSON con listas de
-// gastos (ver GastosData). El tipo se elige al crearla y no cambia despues.
-export type NoteKind = "nota" | "gastos";
+// Tipo de nota. Segun el tipo, `content` se interpreta distinto:
+//   - "nota"   -> HTML enriquecido (ver Editor).
+//   - "gastos" -> JSON con listas de gastos (ver GastosData).
+//   - "peso"   -> JSON con registros de peso diarios (ver PesoData).
+// El tipo se elige al crearla y no cambia despues.
+export type NoteKind = "nota" | "gastos" | "peso";
 
 // Una nota tal como existe en la base de datos.
 export type Note = {
@@ -52,4 +54,19 @@ export type GastoLista = {
 
 export type GastosData = {
   listas: GastoLista[];
+};
+
+// ----- Notas de peso -------------------------------------------
+// Una nota de peso es un registro diario: cada manana anotas tu peso. Cada
+// renglon lleva su PROPIA fecha (no la de la nota), asi se puede cargar un dia
+// olvidado o corregir cualquier fecha a mano. Se serializa a JSON en `content`.
+
+export type PesoRegistro = {
+  id: string;
+  fecha: string; // dia del pesaje en formato 'YYYY-MM-DD' (sin hora)
+  peso: number; // en kg
+};
+
+export type PesoData = {
+  registros: PesoRegistro[];
 };

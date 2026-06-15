@@ -1,0 +1,140 @@
+/* ---- Editor de notas de peso (form de carga + listado) ---- */
+.peso {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* --- Form de carga (peso de hoy / fecha elegida) --- */
+.form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+.formFecha,
+.formPeso {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--color-ink);
+  padding: var(--space-sm) var(--space-md);
+}
+.formFecha {
+  flex: 0 0 auto;
+}
+.formPeso {
+  flex: 1;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+.formFecha:focus,
+.formPeso:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+.addBtn {
+  flex: 0 0 auto;
+  background: var(--color-accent);
+  border: none;
+  border-radius: var(--radius);
+  color: #fff;
+  font-size: 0.95rem;
+  padding: var(--space-sm) var(--space-lg);
+  cursor: pointer;
+}
+.addBtn:hover {
+  filter: brightness(1.05);
+}
+
+/* --- Mensaje cuando no hay registros --- */
+.vacio {
+  color: var(--color-ink-soft);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  padding: var(--space-md) var(--space-xs);
+}
+
+/* --- Tabla de registros --- */
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+.tabla th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-ink-soft);
+  font-weight: 600;
+  padding: var(--space-sm) var(--space-md);
+}
+.tabla td {
+  padding: 2px var(--space-md);
+  border-top: 1px solid var(--color-line);
+  vertical-align: middle;
+}
+.colFecha {
+  width: 45%;
+}
+.colPeso {
+  width: 140px;
+  text-align: right;
+}
+.colAccion {
+  width: 36px;
+}
+
+/* Inputs dentro de la tabla: se ven como celdas, sin caja. */
+.inputFecha,
+.inputPeso {
+  width: 100%;
+  border: none;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--color-ink);
+  padding: var(--space-sm) 0;
+}
+.inputFecha:focus,
+.inputPeso:focus {
+  outline: none;
+}
+.inputPeso {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+/* Oculta las flechitas del input number (quedan feas en una tabla). */
+.inputPeso::-webkit-outer-spin-button,
+.inputPeso::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.inputPeso {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Boton de icono (borrar registro). Discreto hasta el hover. */
+.iconBtn {
+  background: none;
+  border: none;
+  color: var(--color-ink-soft);
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: var(--space-xs);
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0.6;
+}
+.iconBtn:hover {
+  opacity: 1;
+  background: var(--color-bg);
+  color: var(--color-danger);
+}
