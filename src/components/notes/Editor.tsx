@@ -115,9 +115,17 @@ export const Editor = forwardRef<EditorHandle, Props>(function Editor(
 
   // El padre (NoteEditor) abre el menu de formato desde el boton "Aa" de la
   // barra: se muestra centrado y actua sobre la seleccion actual del editor.
+  // Antes de abrir, cerramos el popup NATIVO de seleccion de Android quitando
+  // el foco y la seleccion del DOM. ProseMirror conserva su seleccion en su
+  // estado, asi que al elegir un formato (que hace focus()) se aplica igual; y
+  // "Copiar" lee la seleccion del estado, no del DOM, asi que tambien funciona.
   useImperativeHandle(ref, () => ({
-    openFormatMenu: () => setMenu({ x: 0, y: 0, centered: true }),
-  }), []);
+    openFormatMenu: () => {
+      editor?.commands.blur();
+      window.getSelection()?.removeAllRanges();
+      setMenu({ x: 0, y: 0, centered: true });
+    },
+  }), [editor]);
 
   if (!editor) return null;
 

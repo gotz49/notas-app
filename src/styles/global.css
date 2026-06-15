@@ -16,6 +16,15 @@ body,
 #root {
   height: 100%;
 }
+/* App-shell: el documento NO scrollea nunca (solo lo hace el panel interno
+   .main). Asi la barra superior del editor queda fija el 100% del tiempo y no
+   se va al llegar al final de una nota larga. overscroll-behavior corta el
+   "rebote" que en movil arrastraba la pagina entera. */
+html,
+body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
 
 body {
   font-family: var(--font-body);

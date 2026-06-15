@@ -8,9 +8,9 @@
    ============================================================ */
 .app {
   display: flex;
-  height: 100vh;
-  height: 100dvh; /* dvh = alto real visible en movil; evita que la pagina scrollee
-                     y se "vaya" la barra superior del editor */
+  height: 100%; /* 100% del body (que esta bloqueado a la pantalla); no usar
+                   100vh/dvh aca: si excede el body, la pagina scrollearia y se
+                   iria la barra superior. */
   overflow: hidden;
 }
 
