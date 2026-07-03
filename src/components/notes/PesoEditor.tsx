@@ -77,7 +77,7 @@ export function PesoEditor({ content, onChange }: Props) {
           className={styles.formPeso}
           type="number"
           inputMode="decimal"
-          step="0.1"
+          step="0.01"
           placeholder="Peso (kg)"
           value={peso}
           onChange={(e) => setPeso(e.target.value)}
@@ -122,7 +122,7 @@ export function PesoEditor({ content, onChange }: Props) {
                     className={styles.inputPeso}
                     type="number"
                     inputMode="decimal"
-                    step="0.1"
+                    step="0.01"
                     value={r.peso || ""}
                     placeholder="0"
                     onChange={(e) =>

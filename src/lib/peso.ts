@@ -68,10 +68,11 @@ export function registrosEnRango(
   return registros.filter((r) => r.fecha >= desde && r.fecha <= hasta);
 }
 
-// Formatea un peso con 1 decimal (es-AR: 85,4). Sin unidad (la pone el UI).
+// Formatea un peso con 2 decimales (es-AR: 85,42). Sin unidad (la pone el UI).
+// Se registra con 2 decimales, asi que el grafico exportado tambien los muestra.
 const formatter = new Intl.NumberFormat("es-AR", {
-  minimumFractionDigits: 1,
-  maximumFractionDigits: 1,
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
 });
 export function formatPeso(n: number): string {
   return formatter.format(n || 0);

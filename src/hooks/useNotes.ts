@@ -28,7 +28,23 @@ export function useNotes(userId: string | undefined) {
     // Sincronizacion en vivo: si otro dispositivo cambia algo,
     // recargamos la lista automaticamente.
     const unsubscribe = notesService.subscribeToNotes(reload);
-    return unsubscribe;
+
+    // Respaldo del realtime: el websocket se suele cortar cuando la pestana
+    // queda en segundo plano o el equipo se suspende, y se pierden los eventos
+    // de ese lapso (tipico al escribir en el movil y volver a la PC). Al
+    // reactivar la pestana o recuperar la conexion, recargamos si o si para no
+    // quedarnos con datos viejos.
+    const alVolver = () => {
+      if (document.visibilityState === "visible") reload();
+    };
+    document.addEventListener("visibilitychange", alVolver);
+    window.addEventListener("online", reload);
+
+    return () => {
+      unsubscribe();
+      document.removeEventListener("visibilitychange", alVolver);
+      window.removeEventListener("online", reload);
+    };
   }, [userId, reload]);
 
   // Crear una nota nueva y devolverla (para abrirla al instante). El `kind`
