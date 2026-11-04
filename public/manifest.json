@@ -4,7 +4,7 @@
   "description": "App de notas personal con sincronización entre dispositivos",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#f4f1ea",
+  "background_color": "#1a1917",
   "theme_color": "#9c4221",
   "icons": [
     {

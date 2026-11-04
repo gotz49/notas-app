@@ -6,6 +6,9 @@
    Por ejemplo, para un modo oscuro, solo redefinis estas variables.
    ============================================================ */
 :root {
+  /* Controles nativos (casillas, calendario, scroll) acordes al tema. */
+  color-scheme: light;
+
   /* Paleta: papel calido + tinta. Sobria, no el tipico look "IA". */
   --color-bg: #f4f1ea;          /* fondo papel */
   --color-surface: #fbfaf6;     /* tarjetas / paneles */
@@ -38,6 +41,7 @@
 }
 
 [data-theme="dark"] {
+  color-scheme: dark;
   --color-bg: #1a1917;
   --color-surface: #232220;
   --color-ink: #ece8e0;
