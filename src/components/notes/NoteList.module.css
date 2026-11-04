@@ -154,7 +154,9 @@
   }
   .collapsed .header,
   .collapsed .search,
+  .collapsed .tabs,
   .collapsed .list,
+  .collapsed .trashBar,
   .collapsed .footer {
     display: none;
   }
@@ -215,4 +217,51 @@
 }
 .itemDate {
   color: var(--color-ink-soft);
+}
+/* --- Pestanas Notas / Papelera --- */
+.tabs {
+  display: flex;
+  gap: var(--space-xs);
+  padding: 0 var(--space-sm);
+  border-bottom: 1px solid var(--color-line);
+}
+.tab {
+  border: none;
+  background: none;
+  padding: var(--space-xs) var(--space-sm);
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--color-ink-soft);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+}
+.tab:hover {
+  color: var(--color-ink);
+}
+.tabActive {
+  color: var(--color-ink);
+  border-bottom-color: var(--color-accent);
+}
+
+/* Boton "Vaciar papelera" (solo en la pestana Papelera) */
+.trashBar {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-xs);
+  border-top: 1px solid var(--color-line);
+}
+
+/* Boton "Salir" del pie (antes tenia estilos en linea) */
+.signOut {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--color-accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.signOut:hover {
+  text-decoration: underline;
 }

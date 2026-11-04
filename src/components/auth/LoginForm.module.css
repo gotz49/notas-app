@@ -69,3 +69,18 @@
   text-decoration: underline;
   font-size: inherit;
 }
+
+/* Aclaracion chica debajo de un campo ("Minimo 8 caracteres") */
+.hint {
+  font-size: 0.8rem;
+  color: var(--color-ink-soft);
+}
+/* Mensajes buenos ("Cuenta creada…"): verde, no rojo como un error. */
+.notice {
+  color: var(--color-success);
+  background: var(--color-success-soft);
+  border-radius: var(--radius);
+  padding: var(--space-sm);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-md);
+}

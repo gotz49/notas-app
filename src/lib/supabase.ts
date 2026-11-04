@@ -8,8 +8,8 @@ import { createClient } from "@supabase/supabase-js";
 
 // Leemos las claves desde las variables de entorno (archivo .env).
 // import.meta.env es la forma en que Vite expone esas variables.
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Falla temprano y con un mensaje claro si faltan las claves,
 // en vez de dar un error raro mas adelante.

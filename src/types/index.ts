@@ -22,17 +22,26 @@ export type Note = {
   content: string;
   pinned: boolean; // si esta fijada, va siempre arriba de la lista
   keywords: string; // bloc de aclaraciones/definiciones, atado a la nota
+  deleted_at: string | null; // null = normal; con fecha = en la papelera
   created_at: string; // fecha en formato ISO (texto)
+  // "Version" de la nota: la base la cambia SOLO cuando cambia el titulo,
+  // el contenido o las keywords (ver trigger en supabase/schema.sql). El
+  // autoguardado la usa para detectar si otro dispositivo edito en el medio.
   updated_at: string;
 };
 
-// Los campos que el usuario puede editar de una nota.
-// "Partial" significa "todos opcionales": podes actualizar solo el titulo,
-// solo el contenido, las keywords, fijarla/desfijarla, o varios a la vez.
+// Lo que escribe el usuario y guarda el autoguardado (utils/autosaveQueue.ts).
+// "Partial" significa "todos opcionales": podes guardar solo el titulo,
+// solo el contenido, las keywords, o varios a la vez.
 // `kind` no esta aca a proposito: se fija al crear la nota y no se edita.
-export type NoteUpdate = Partial<
-  Pick<Note, "title" | "content" | "pinned" | "keywords">
->;
+// Fijar y la papelera tienen sus propias operaciones (useNotes).
+export type NoteUpdate = Partial<Pick<Note, "title" | "content" | "keywords">>;
+
+// Un cambio que llega en vivo desde Supabase Realtime (otro dispositivo,
+// otra pestana, o el "eco" de nuestro propio guardado).
+export type RemoteNoteChange =
+  | { type: "upsert"; note: Note } // INSERT o UPDATE
+  | { type: "delete"; id: string }; // DELETE (borrado definitivo)
 
 // ----- Notas de gastos -----------------------------------------
 // Una nota de gastos contiene varias "listas" (p. ej. "Servicios",

@@ -1,0 +1,28 @@
+# ============================================================
+#  Chequeos automaticos (NO publica nada)
+# ------------------------------------------------------------
+#  En cada pull request y en cada push a cualquier rama corre:
+#  tipos (tsc) + lint (ESLint) + tests (Vitest) + build.
+#  Si algo falla, GitHub lo marca en rojo antes de mezclar a main.
+#  La publicacion a GitHub Pages la hace deploy.yml (solo en main).
+# ============================================================
+name: Chequeos
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build

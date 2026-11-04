@@ -37,6 +37,8 @@ import styles from "./Editor.module.css";
 
 type Props = {
   content: string;
+  // false = solo lectura (notas en la papelera). Por defecto se puede editar.
+  editable?: boolean;
   onChange: (html: string) => void;
   // Sube una imagen y devuelve su URL publica. Si no se pasa, se desactiva
   // todo lo relacionado con imagenes (pegar, arrastrar y la opcion del menu).
@@ -62,10 +64,15 @@ function imageFiles(dt: DataTransfer | null): File[] {
 }
 
 export const Editor = forwardRef<EditorHandle, Props>(function Editor(
-  { content, onChange, onUploadImage },
+  { content, editable = true, onChange, onUploadImage },
   ref
 ) {
   const [menu, setMenu] = useState<MenuPos>(null);
+  // Ultimo HTML conocido. Solo avisamos onChange si el HTML realmente cambio:
+  // TipTap a veces "normaliza" el documento sin que el usuario haya escrito
+  // nada, y eso no debe disparar un guardado (ni un falso conflicto si la
+  // nota esta abierta en dos dispositivos).
+  const lastHtml = useRef<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   // Funcion "subir + insertar". Vive en un ref porque los handlers de
   // pegar/soltar de TipTap se crean una sola vez (al iniciar el editor) y
@@ -101,7 +108,16 @@ export const Editor = forwardRef<EditorHandle, Props>(function Editor(
       }),
     ],
     content,
-    onUpdate: ({ editor }) => onChange(editor.getHTML()),
+    editable,
+    onCreate: ({ editor }) => {
+      lastHtml.current = editor.getHTML();
+    },
+    onUpdate: ({ editor }) => {
+      const html = editor.getHTML();
+      if (html === lastHtml.current) return;
+      lastHtml.current = html;
+      onChange(html);
+    },
     editorProps: {
       // Pegar una imagen: la subimos e insertamos en vez del comportamiento
       // por defecto (que la incrustaria como base64 y engordaria la nota).
@@ -212,6 +228,7 @@ export const Editor = forwardRef<EditorHandle, Props>(function Editor(
   if (!editor) return null;
 
   function openMenu(e: React.MouseEvent) {
+    if (!editable) return; // en solo lectura, el menu nativo del navegador (copiar)
     // En movil dejamos el long-press NATIVO (seleccionar texto + copiar/pegar
     // del sistema); el menu de formato se abre con el boton "Aa" de la barra.
     if (!window.matchMedia("(min-width: 769px)").matches) return;
