@@ -11,16 +11,17 @@ import styles from "./NoteList.module.css";
 type Props = {
   note: Note;
   active: boolean;
+  inTrash?: boolean; // en la papelera se muestra cuando se borro
   onSelect: (id: string) => void;
   // Clic derecho: abre el menu de acciones en (x, y). Lo maneja NoteList.
   onContext: (note: Note, x: number, y: number) => void;
 };
 
-export function NoteListItem({ note, active, onSelect, onContext }: Props) {
-  const fecha = new Date(note.updated_at).toLocaleDateString("es", {
-    day: "numeric",
-    month: "short",
-  });
+const fechaCorta = (iso: string) => new Date(iso).toLocaleDateString("es", { day: "numeric", month: "short" });
+
+export function NoteListItem({ note, active, inTrash = false, onSelect, onContext }: Props) {
+  const fecha =
+    inTrash && note.deleted_at ? `Borrada el ${fechaCorta(note.deleted_at)}` : fechaCorta(note.updated_at);
   return (
     <button
       className={`${styles.item} ${active ? styles.itemActive : ""}`}
@@ -31,7 +32,7 @@ export function NoteListItem({ note, active, onSelect, onContext }: Props) {
       }}
     >
       <div className={styles.itemTitle}>
-        {note.pinned && <span className={styles.pin} aria-label="Fijada">📌</span>}
+        {note.pinned && !inTrash && <span className={styles.pin} aria-label="Fijada">📌</span>}
         {note.kind === "gastos" && (
           <span className={styles.pin} aria-label="Lista de gastos">💲</span>
         )}

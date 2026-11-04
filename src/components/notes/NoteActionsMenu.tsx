@@ -2,13 +2,16 @@
 //  NoteActionsMenu
 // ------------------------------------------------------------
 //  Menu flotante con las acciones de una nota (Keywords, Atajos,
-//  Fijar/Quitar, Exportar, Borrar). Se reutiliza en dos lugares:
+//  Fijar/Quitar, Exportar, Mover a la papelera). "onDelete" manda la
+//  nota a la papelera (se puede deshacer), por eso no pide confirmar;
+//  el borrado definitivo se hace desde la papelera.
+//  Se reutiliza en dos lugares:
 //   - como desplegable del boton hamburguesa en la barra del editor.
 //   - como menu de clic derecho sobre una nota de la lista.
 //  El padre decide la posicion via `style` y maneja el estado de
 //  apertura; este componente solo avisa con `onClose`.
 // ============================================================
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import type { CSSProperties } from "react";
 import type { Note } from "../../types";
 import styles from "./NoteActionsMenu.module.css";
@@ -38,8 +41,6 @@ export function NoteActionsMenu({
   onDelete,
   onClose,
 }: Props) {
-  const [confirmDelete, setConfirmDelete] = useState(false);
-
   // Cerrar al hacer clic afuera o con Escape. El Escape se escucha en fase de
   // captura y detiene la propagacion para que solo cierre este menu y no
   // dispare ademas el "volver al inicio" global de App.
@@ -96,15 +97,9 @@ export function NoteActionsMenu({
       </button>
       <button className={styles.item} onClick={run(onExport)}>Exportar</button>
       <div className={styles.sep} />
-      {confirmDelete ? (
-        <div className={styles.confirmRow}>
-          <span className={styles.confirmText}>¿Borrar?</span>
-          <button className={`${styles.confirmBtn} ${styles.danger}`} onClick={run(onDelete)}>Sí</button>
-          <button className={styles.confirmBtn} onClick={() => setConfirmDelete(false)}>No</button>
-        </div>
-      ) : (
-        <button className={`${styles.item} ${styles.danger}`} onClick={() => setConfirmDelete(true)}>Borrar</button>
-      )}
+      <button className={`${styles.item} ${styles.danger}`} onClick={run(onDelete)}>
+        Mover a la papelera
+      </button>
       </div>
     </>
   );

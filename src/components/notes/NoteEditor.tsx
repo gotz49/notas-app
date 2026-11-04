@@ -5,8 +5,20 @@
 //  (una sola superficie, sin pestanas). El formato se aplica en
 //  vivo mientras escribis.
 //
-//  Guarda con "debounce": espera ~600ms despues de que dejas de
-//  teclear antes de mandar a la base, para no escribir en cada letra.
+//  Guardado: cada cambio (titulo, contenido, keywords) se le pasa a la
+//  cola de autoguardado (hooks/useAutosave -> utils/autosaveQueue.ts),
+//  que espera ~600ms sin teclear, guarda, reintenta si falla y detecta
+//  conflictos con otros dispositivos. Este componente solo avisa los
+//  cambios y muestra el estado.
+//
+//  Dos piezas:
+//   - NoteEditor (contenedor): decide que mostrar alrededor de la nota
+//     (avisos de papelera y de conflicto) y cuando "adoptar" una version
+//     nueva que llego de otro dispositivo.
+//   - NotePanel: la barra + titulo + editor + keywords de UNA nota. Se
+//     monta de nuevo (key = "id:revision") al cambiar de nota o al
+//     adoptar una version remota, asi arranca limpio con el contenido
+//     correcto (y cada nota tiene su propio historial de deshacer).
 //
 //  Las acciones de la nota (Keywords, Atajos, Fijar, Exportar,
 //  Borrar) viven en un menu hamburguesa para no recargar la barra
@@ -15,6 +27,8 @@
 // ============================================================
 import { useEffect, useRef, useState } from "react";
 import type { Note, NoteUpdate } from "../../types";
+import type { Autosave } from "../../hooks/useAutosave";
+import { isNewer } from "../../utils/notes";
 import { Button } from "../ui/Button";
 import { Editor, type EditorHandle } from "./Editor";
 import { GastosEditor } from "./GastosEditor";
@@ -22,13 +36,16 @@ import { PesoEditor } from "./PesoEditor";
 import { NoteActionsMenu } from "./NoteActionsMenu";
 import styles from "./NoteEditor.module.css";
 
-// Estado del indicador de guardado que se muestra en la toolbar.
-type SaveStatus = "idle" | "saving" | "saved";
-
 type Props = {
   note: Note | null;
-  onChange: (id: string, changes: NoteUpdate) => void | Promise<unknown>;
-  onDelete: (id: string) => void;
+  autosave: Autosave;
+  onTitleDraft: (id: string, changes: NoteUpdate) => void; // titulo en vivo en la lista
+  onRefreshNote: (id: string) => Promise<Note | null>;
+  onTrash: (id: string) => void;
+  onRestore: (id: string) => void;
+  onDeleteForever: (id: string) => void;
+  onTogglePin: (note: Note) => void;
+  onError: (error: unknown, fallback: string) => void;
   onBack?: () => void; // volver a la lista (solo visible en movil)
   // Visibilidad del panel de keywords (la maneja App, que tambien la abre
   // desde el clic derecho de la lista) y disparador del panel de atajos.
@@ -39,102 +56,29 @@ type Props = {
   onUploadImage: (file: File) => Promise<string>; // sube imagen -> URL publica
 };
 
-export function NoteEditor({
-  note,
-  onChange,
-  onDelete,
-  onBack,
-  showKeywords,
-  onToggleKeywords,
-  onShowHelp,
-  onExport,
-  onUploadImage,
-}: Props) {
-  const [title, setTitle] = useState("");
-  const [keywords, setKeywords] = useState("");
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-  const [menuOpen, setMenuOpen] = useState(false); // menu hamburguesa de acciones
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Cambios todavia no enviados (de UNA nota). Se acumulan: si editas el
-  // titulo y enseguida el texto, se mandan los dos juntos en vez de pisarse.
-  const pending = useRef<{ id: string; changes: NoteUpdate } | null>(null);
-  // Ref al editor de texto para abrir el menu de formato desde el boton "Aa"
-  // de la barra (asi el long-press queda libre para la seleccion nativa).
-  const editorRef = useRef<EditorHandle>(null);
+export function NoteEditor(props: Props) {
+  const { note, autosave, onRefreshNote, onRestore, onDeleteForever, onError } = props;
+  const { queue } = autosave;
 
-  // Envia ya mismo lo pendiente (si hay).
-  const flushRef = useRef<() => void>(() => {});
-  flushRef.current = () => {
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = null;
-    const p = pending.current;
-    pending.current = null;
-    if (p) void commitSave(p.id, p.changes);
-  };
+  // Sube cada vez que adoptamos una version que llego del servidor: forma
+  // parte del "key" de NotePanel para que se monte de nuevo con ese contenido.
+  const [revision, setRevision] = useState(0);
 
-  // Si la app pasa a segundo plano (cambiar de app en el celu, cerrar la
-  // pestana), guardamos lo pendiente sin esperar el debounce.
+  // Versiones: al abrir una nota, el autoguardado escribe "a partir de" su
+  // updated_at. Si despues llega una version MAS NUEVA (otro dispositivo) y
+  // aca no hay cambios sin guardar, se muestra. Si hay cambios sin guardar,
+  // no se toca nada: al guardar, el servidor detecta el conflicto y aparece
+  // el aviso de abajo. Detalle: docs/ARQUITECTURA.md -> "Conflictos".
   useEffect(() => {
-    const onHide = () => {
-      if (document.visibilityState === "hidden") flushRef.current();
-    };
-    document.addEventListener("visibilitychange", onHide);
-    window.addEventListener("pagehide", onHide);
-    return () => {
-      document.removeEventListener("visibilitychange", onHide);
-      window.removeEventListener("pagehide", onHide);
-    };
-  }, []);
-
-  // Cuando cambia la nota seleccionada, primero guardamos lo pendiente de la
-  // anterior; despues sincronizamos los campos locales y reseteamos el
-  // indicador de guardado y el menu de acciones.
-  useEffect(() => {
-    flushRef.current();
-    setTitle(note?.title ?? "");
-    setKeywords(note?.keywords ?? "");
-    setSaveStatus("idle");
-    setMenuOpen(false);
-  }, [note?.id]);
-
-  // El "Guardado ✓" es efimero: se muestra un instante y desaparece, sin
-  // quedarse fijo en la barra.
-  useEffect(() => {
-    if (saveStatus !== "saved") return;
-    const t = setTimeout(() => setSaveStatus("idle"), 800);
-    return () => clearTimeout(t);
-  }, [saveStatus]);
-
-  // Guarda de verdad: marca "Guardando...", espera al server y marca "Guardado".
-  async function commitSave(id: string, changes: NoteUpdate) {
-    setSaveStatus("saving");
-    await onChange(id, changes);
-    setSaveStatus("saved");
-  }
-
-  // Programa el guardado diferido (debounce). Desde que tipeas ya se ve
-  // "Guardando..." y recien tras 600ms sin teclear se manda al server.
-  // Los cambios se ACUMULAN por nota; si lo pendiente era de otra nota, se
-  // envia primero (antes se descartaba al reiniciar el timer).
-  function scheduleSave(changes: NoteUpdate) {
-    if (!note) return;
-    if (pending.current && pending.current.id !== note.id) flushRef.current();
-    pending.current = { id: note.id, changes: { ...pending.current?.changes, ...changes } };
-    setSaveStatus("saving");
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => flushRef.current(), 600);
-  }
-
-  // Al borrar la nota abierta, descartamos sus cambios pendientes (no tiene
-  // sentido guardar algo que se esta borrando).
-  function handleDelete(id: string) {
-    if (pending.current?.id === id) {
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = null;
-      pending.current = null;
+    if (!note || queue.isBusy(note.id)) return;
+    const base = queue.getBase(note.id);
+    if (base === undefined) {
+      queue.setBase(note.id, note.updated_at);
+    } else if (isNewer(note.updated_at, base)) {
+      queue.setBase(note.id, note.updated_at);
+      setRevision((r) => r + 1);
     }
-    onDelete(id);
-  }
+  }, [note, queue]);
 
   // Sin nota seleccionada: pantalla de inicio (tambien al apretar Esc en una
   // nota abierta, ver App). Mensaje breve y en gris sutil.
@@ -142,13 +86,93 @@ export function NoteEditor({
     return (
       <main className={styles.editor}>
         <div className={styles.home}>
-          <p className={styles.homeText}>
-            Seleccioná una nota o creá una nueva para visualizarla.
-          </p>
+          <p className={styles.homeText}>Seleccioná una nota o creá una nueva para visualizarla.</p>
         </div>
       </main>
     );
   }
+
+  const noteId = note.id;
+  const inTrash = note.deleted_at !== null;
+  const inConflict = autosave.status === "conflict" && autosave.conflictNoteId === noteId;
+
+  // "Usar la otra version": descartar lo mio y mostrar lo del servidor.
+  async function keepTheirs() {
+    try {
+      queue.keepTheirs();
+      const fresh = await onRefreshNote(noteId);
+      if (fresh) queue.setBase(noteId, fresh.updated_at);
+      setRevision((r) => r + 1);
+    } catch (e) {
+      onError(e, "No se pudo traer la otra versión.");
+    }
+  }
+
+  return (
+    <main className={styles.editor}>
+      {inTrash && (
+        <div className={styles.banner} role="status">
+          <span>Esta nota está en la papelera. Para editarla, restaurala.</span>
+          <span className={styles.bannerActions}>
+            <Button variant="ghost" onClick={() => onRestore(noteId)}>
+              Restaurar
+            </Button>
+            <Button variant="danger" onClick={() => onDeleteForever(noteId)}>
+              Borrar para siempre
+            </Button>
+          </span>
+        </div>
+      )}
+
+      {inConflict && (
+        <div className={`${styles.banner} ${styles.bannerWarning}`} role="alert">
+          <span>
+            Esta nota se modificó en otro dispositivo mientras la editabas. Tus últimos cambios todavía no se
+            guardaron.
+          </span>
+          <span className={styles.bannerActions}>
+            <Button variant="ghost" onClick={() => void keepTheirs()}>
+              Usar la otra versión
+            </Button>
+            <Button onClick={() => void queue.keepMine()}>Quedarme con la mía</Button>
+          </span>
+        </div>
+      )}
+
+      <NotePanel key={`${noteId}:${revision}`} {...props} note={note} readOnly={inTrash} />
+    </main>
+  );
+}
+
+// ---- Panel de UNA nota (barra + titulo + editor + keywords) ----------
+
+type PanelProps = Omit<Props, "note"> & { note: Note; readOnly: boolean };
+
+function NotePanel({
+  note,
+  readOnly,
+  autosave,
+  onTitleDraft,
+  onTrash,
+  onTogglePin,
+  onBack,
+  showKeywords,
+  onToggleKeywords,
+  onShowHelp,
+  onExport,
+  onUploadImage,
+}: PanelProps) {
+  // Estado local de los campos de texto. Arranca con lo de la nota; como el
+  // panel se monta de nuevo por nota (key), no hace falta re-sincronizarlo.
+  const [title, setTitle] = useState(note.title);
+  const [keywords, setKeywords] = useState(note.keywords);
+  const [menuOpen, setMenuOpen] = useState(false); // menu hamburguesa de acciones
+  // Ref al editor de texto para abrir el menu de formato desde el boton "Aa"
+  // de la barra (asi el long-press queda libre para la seleccion nativa).
+  const editorRef = useRef<EditorHandle>(null);
+
+  // Cada cambio va a la cola de autoguardado (ella decide cuando guardar).
+  const save = (changes: NoteUpdate) => autosave.queue.queue(note.id, changes);
 
   // Cada tipo usa su editor. Solo la nota de texto ("nota") tiene panel de
   // keywords e imagenes; gastos y peso no.
@@ -156,29 +180,24 @@ export function NoteEditor({
   const esPeso = note.kind === "peso";
   const esTexto = note.kind === "nota";
   const placeholderTitulo = esGastos ? "Gastos" : esPeso ? "Peso" : "Sin titulo";
+  const editable = !readOnly;
 
   return (
-    <main className={styles.editor}>
+    <>
       <div className={styles.toolbar}>
         {/* Izquierda: volver a la lista (solo en movil, via .backBtn) */}
-        <Button variant="ghost" className={styles.backBtn} onClick={onBack}>← Notas</Button>
+        <Button variant="ghost" className={styles.backBtn} onClick={onBack}>
+          ← Notas
+        </Button>
 
         {/* Centro: estado de guardado */}
         <span className={styles.saveSlot}>
-          {saveStatus === "saving" && (
-            <span className={styles.saveStatus}>Guardando…</span>
-          )}
-          {saveStatus === "saved" && (
-            <span className={`${styles.saveStatus} ${styles.saved}`}>Guardado ✓</span>
-          )}
+          <SaveIndicator autosave={autosave} noteId={note.id} />
         </span>
 
-        {/* Boton de formato: abre el menu sobre la seleccion. Solo en notas de
-            texto (gastos/peso no tienen formato). En movil deja el long-press
-            libre para la seleccion nativa. */}
         {/* Boton "+": insertar bloque (checklist, fecha, desplegable...),
             como en Claude Docs. Tambien se puede escribir "/" en el texto. */}
-        {esTexto && (
+        {esTexto && editable && (
           <Button
             variant="ghost"
             className={styles.formatBtn}
@@ -193,7 +212,10 @@ export function NoteEditor({
           </Button>
         )}
 
-        {esTexto && (
+        {/* Boton de formato: abre el menu sobre la seleccion. Solo en notas de
+            texto (gastos/peso no tienen formato). En movil deja el long-press
+            libre para la seleccion nativa. */}
+        {esTexto && editable && (
           <Button
             variant="ghost"
             className={styles.formatBtn}
@@ -208,35 +230,37 @@ export function NoteEditor({
         )}
 
         {/* Derecha: menu hamburguesa con todas las acciones de la nota */}
-        <div className={styles.menuWrap}>
-          <Button
-            variant="ghost"
-            className={styles.menuBtn}
-            aria-label="Opciones de la nota"
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
-            onClick={(e) => {
-              e.stopPropagation();
-              setMenuOpen((v) => !v);
-            }}
-          >
-            ☰
-          </Button>
-          {menuOpen && (
-            <NoteActionsMenu
-              note={note}
-              style={{ position: "absolute", top: "calc(100% + 6px)", right: 0 }}
-              showKeywordsItem={esTexto}
-              keywordsLabel={showKeywords ? "Ocultar keywords" : "Keywords"}
-              onKeywords={onToggleKeywords}
-              onHelp={onShowHelp}
-              onTogglePin={() => void commitSave(note.id, { pinned: !note.pinned })}
-              onExport={() => onExport(note)}
-              onDelete={() => handleDelete(note.id)}
-              onClose={() => setMenuOpen(false)}
-            />
-          )}
-        </div>
+        {editable && (
+          <div className={styles.menuWrap}>
+            <Button
+              variant="ghost"
+              className={styles.menuBtn}
+              aria-label="Opciones de la nota"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpen((v) => !v);
+              }}
+            >
+              ☰
+            </Button>
+            {menuOpen && (
+              <NoteActionsMenu
+                note={note}
+                style={{ position: "absolute", top: "calc(100% + 6px)", right: 0 }}
+                showKeywordsItem={esTexto}
+                keywordsLabel={showKeywords ? "Ocultar keywords" : "Keywords"}
+                onKeywords={onToggleKeywords}
+                onHelp={onShowHelp}
+                onTogglePin={() => onTogglePin(note)}
+                onExport={() => onExport(note)}
+                onDelete={() => onTrash(note.id)}
+                onClose={() => setMenuOpen(false)}
+              />
+            )}
+          </div>
+        )}
       </div>
 
       <div className={`${styles.body} ${showKeywords && esTexto ? styles.withKeywords : ""}`}>
@@ -246,31 +270,33 @@ export function NoteEditor({
               className={styles.titleInput}
               value={title}
               placeholder={placeholderTitulo}
+              aria-label="Título de la nota"
+              maxLength={500} /* mismo limite que la base (notes_title_length) */
+              readOnly={readOnly}
               onChange={(e) => {
                 setTitle(e.target.value);
-                scheduleSave({ title: e.target.value });
+                save({ title: e.target.value });
+                onTitleDraft(note.id, { title: e.target.value });
               }}
             />
-            {/* key={note.id}: al cambiar de nota, el editor se reinicia
-                limpio con el contenido de la nota nueva. */}
+            {/* El panel ya se monta de nuevo por nota (key en NoteEditor),
+                asi cada editor arranca limpio con el contenido correcto.
+                En la papelera, gastos y peso quedan deshabilitados
+                (fieldset disabled) y el editor de texto en solo lectura. */}
             {esGastos ? (
-              <GastosEditor
-                key={note.id}
-                content={note.content}
-                onChange={(json) => scheduleSave({ content: json })}
-              />
+              <fieldset className={styles.fieldset} disabled={readOnly}>
+                <GastosEditor content={note.content} onChange={(json) => save({ content: json })} />
+              </fieldset>
             ) : esPeso ? (
-              <PesoEditor
-                key={note.id}
-                content={note.content}
-                onChange={(json) => scheduleSave({ content: json })}
-              />
+              <fieldset className={styles.fieldset} disabled={readOnly}>
+                <PesoEditor content={note.content} onChange={(json) => save({ content: json })} />
+              </fieldset>
             ) : (
               <Editor
-                key={note.id}
                 ref={editorRef}
                 content={note.content}
-                onChange={(html) => scheduleSave({ content: html })}
+                editable={editable}
+                onChange={(html) => save({ content: html })}
                 onUploadImage={onUploadImage}
               />
             )}
@@ -287,14 +313,60 @@ export function NoteEditor({
               className={styles.keywordsInput}
               value={keywords}
               placeholder="Términos, definiciones, aclaraciones de conceptos…"
+              readOnly={readOnly}
               onChange={(e) => {
                 setKeywords(e.target.value);
-                scheduleSave({ keywords: e.target.value });
+                save({ keywords: e.target.value });
               }}
             />
           </aside>
         )}
       </div>
-    </main>
+    </>
   );
+}
+
+// ---- Estado del guardado (centro de la barra) ------------------------
+//  "Guardando…" mientras hay cambios sin guardar; "Guardado ✓" un instante
+//  al terminar (efimero, no queda fijo); si falla, el error + "Reintentar";
+//  si hay un conflicto, lo indica (el aviso con las opciones esta arriba).
+
+function SaveIndicator({ autosave, noteId }: { autosave: Autosave; noteId: string }) {
+  const { status, error, conflictNoteId, queue } = autosave;
+  const [savedVisible, setSavedVisible] = useState(false);
+
+  useEffect(() => {
+    if (status !== "saved") {
+      setSavedVisible(false);
+      return;
+    }
+    setSavedVisible(true);
+    const t = setTimeout(() => setSavedVisible(false), 800);
+    return () => clearTimeout(t);
+  }, [status]);
+
+  if (status === "error") {
+    return (
+      <span className={`${styles.saveStatus} ${styles.saveError}`} role="alert">
+        {error}{" "}
+        <button type="button" className={styles.retryBtn} onClick={() => void queue.retryNow()}>
+          Reintentar
+        </button>
+      </span>
+    );
+  }
+  if (status === "conflict") {
+    return (
+      <span className={`${styles.saveStatus} ${styles.saveError}`}>
+        {conflictNoteId === noteId ? "Conflicto de versiones" : "Conflicto en otra nota"}
+      </span>
+    );
+  }
+  if (status === "pending" || status === "saving") {
+    return <span className={styles.saveStatus}>Guardando…</span>;
+  }
+  if (savedVisible) {
+    return <span className={`${styles.saveStatus} ${styles.saved}`}>Guardado ✓</span>;
+  }
+  return null;
 }

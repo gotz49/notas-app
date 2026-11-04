@@ -18,7 +18,11 @@
   --color-accent: #9c4221;      /* terracota: acento, botones */
   --color-accent-soft: #f0e3dc;
   --color-danger: #a02c2c;
+  --color-danger-soft: #f6e7e7; /* fondo de avisos de error */
+  --color-warning-soft: #f7ecd2; /* fondo del aviso de conflicto / papelera */
   --color-success: #6b8260;     /* verde apagado: confirmacion de guardado */
+  --color-success-soft: #e6ede1; /* fondo de mensajes buenos ("Cuenta creada") */
+  --color-on-accent: #ffffff;   /* texto sobre el color de acento o de error */
 
   /* Fuente del sistema: San Francisco en Apple (-apple-system /
      BlinkMacSystemFont), Segoe UI en Windows, Roboto en Android. */
@@ -50,5 +54,9 @@
   --color-accent: #d98a5f;
   --color-accent-soft: #3a2c23;
   --color-danger: #e07a6f;
+  --color-danger-soft: #3a2422;
+  --color-warning-soft: #3a3220;
   --color-success: #8fae84;
+  --color-success-soft: #1f2b1c;
+  --color-on-accent: #1a1917;
 }

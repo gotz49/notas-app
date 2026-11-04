@@ -1,11 +1,16 @@
 // ============================================================
 //  NoteList  (barra lateral)
 // ------------------------------------------------------------
-//  Muestra la marca, el boton "nueva nota", la lista de notas y
-//  el pie con el email del usuario + cerrar sesion.
+//  Muestra la marca, el boton "nueva nota", el buscador, las
+//  pestanas "Notas" / "Papelera", la lista de notas y el pie con el
+//  email del usuario + cerrar sesion.
+//
+//  Recibe TODAS las notas; que se muestra (vista, busqueda y orden)
+//  lo decide utils/notes.ts -> selectVisibleNotes.
 // ============================================================
 import { useEffect, useState } from "react";
 import type { Note, NoteKind } from "../../types";
+import { countTrash, selectVisibleNotes, type NotesView } from "../../utils/notes";
 import { Button } from "../ui/Button";
 import { NoteListItem } from "./NoteListItem";
 import { NoteActionsMenu } from "./NoteActionsMenu";
@@ -25,6 +30,10 @@ type Props = {
   onShowHelp: () => void;
   onOpenKeywords: (id: string) => void;
   onExport: (note: Note) => void;
+  // Papelera: que pestana se ve y vaciarla.
+  view: NotesView;
+  onViewChange: (view: NotesView) => void;
+  onEmptyTrash: () => void;
 };
 
 export function NoteList({
@@ -39,7 +48,11 @@ export function NoteList({
   onShowHelp,
   onOpenKeywords,
   onExport,
+  view,
+  onViewChange,
+  onEmptyTrash,
 }: Props) {
+  const inTrash = view === "trash";
   // Menu contextual de clic derecho: la nota apuntada y su posicion.
   const [menu, setMenu] = useState<{ note: Note; x: number; y: number } | null>(
     null
@@ -77,22 +90,12 @@ export function NoteList({
     localStorage.setItem("sidebarCollapsed", String(collapsed));
   }, [collapsed]);
 
-  // Filtra por titulo o contenido, sin distinguir mayusculas. Al contenido
-  // le quitamos las etiquetas HTML para no matchear nombres de tags.
-  const q = query.trim().toLowerCase();
-  const filtradas = q
-    ? notes.filter((n) =>
-        (n.title + " " + n.content.replace(/<[^>]*>/g, " "))
-          .toLowerCase()
-          .includes(q)
-      )
-    : notes;
-
-  // Las fijadas arriba. El sort de JS es estable, asi que dentro de cada
-  // grupo se respeta el orden por fecha que ya viene de la base.
-  const visibles = [...filtradas].sort(
-    (a, b) => Number(b.pinned) - Number(a.pinned)
-  );
+  // Notas de la pestana actual, filtradas por titulo/contenido/keywords (sin
+  // distinguir mayusculas ni tildes) y ordenadas: fijadas arriba y despues
+  // la ultima edicion; en la papelera, la ultima borrada arriba.
+  const visibles = selectVisibleNotes(notes, view, query);
+  const trashCount = countTrash(notes);
+  const hayEnVista = notes.some((n) => (inTrash ? n.deleted_at !== null : n.deleted_at === null));
 
   return (
     <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
@@ -170,16 +173,40 @@ export function NoteList({
       <input
         className={styles.search}
         type="search"
-        placeholder="Buscar notas..."
+        placeholder={inTrash ? "Buscar en la papelera..." : "Buscar notas..."}
+        aria-label="Buscar notas"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
 
+      <div className={styles.tabs} role="tablist">
+        <button
+          role="tab"
+          aria-selected={!inTrash}
+          className={`${styles.tab} ${!inTrash ? styles.tabActive : ""}`}
+          onClick={() => onViewChange("notes")}
+        >
+          Notas
+        </button>
+        <button
+          role="tab"
+          aria-selected={inTrash}
+          className={`${styles.tab} ${inTrash ? styles.tabActive : ""}`}
+          onClick={() => onViewChange("trash")}
+        >
+          Papelera{trashCount > 0 ? ` (${trashCount})` : ""}
+        </button>
+      </div>
+
       <div className={styles.list}>
-        {notes.length === 0 ? (
-          <p className={styles.empty}>
-            No tenes notas todavia.<br />Crea la primera con "+ Nueva".
-          </p>
+        {!hayEnVista ? (
+          inTrash ? (
+            <p className={styles.empty}>La papelera está vacía.</p>
+          ) : (
+            <p className={styles.empty}>
+              No tenés notas todavía.<br />Creá la primera con "+ Nueva".
+            </p>
+          )
         ) : visibles.length === 0 ? (
           <p className={styles.empty}>Sin resultados para "{query.trim()}".</p>
         ) : (
@@ -188,12 +215,23 @@ export function NoteList({
               key={note.id}
               note={note}
               active={note.id === activeId}
+              inTrash={inTrash}
               onSelect={onSelect}
-              onContext={(note, x, y) => setMenu({ note, x, y })}
+              // En la papelera no hay menu de clic derecho: las acciones
+              // (Restaurar / Borrar para siempre) estan al abrir la nota.
+              onContext={(note, x, y) => !inTrash && setMenu({ note, x, y })}
             />
           ))
         )}
       </div>
+
+      {inTrash && trashCount > 0 && (
+        <div className={styles.trashBar}>
+          <Button variant="danger" onClick={onEmptyTrash}>
+            Vaciar papelera
+          </Button>
+        </div>
+      )}
 
       {/* Mismo menu de acciones que la hamburguesa del editor, en el cursor. */}
       {menu && (
@@ -211,8 +249,10 @@ export function NoteList({
       )}
 
       <div className={styles.footer}>
-        <span className={styles.email}>{email}</span>
-        <button className={styles.email} style={{ background: "none", border: "none", color: "var(--color-accent)" }} onClick={onSignOut}>
+        <span className={styles.email} title={email}>
+          {email}
+        </span>
+        <button className={styles.signOut} onClick={onSignOut}>
           Salir
         </button>
       </div>

@@ -1,9 +1,9 @@
 /* ============================================================
-   Layout raiz de la app + comportamiento responsivo
+   Layout de la pantalla principal (Workspace) + responsivo
    ------------------------------------------------------------
    Desktop (>768px): sidebar + editor lado a lado.
    Movil (<=768px): un solo panel a pantalla completa. La clase
-   .showEditor (que agrega App.tsx segun mobileView) decide cual
+   .showEditor (que agrega Workspace.tsx segun mobileView) decide cual
    de los dos se ve.
    ============================================================ */
 .app {
@@ -29,4 +29,15 @@
     display: flex;
     width: 100%;
   }
+}
+
+/* Error al cargar las notas (con "Reintentar") */
+.fatal {
+  height: 100%;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  text-align: center;
 }
