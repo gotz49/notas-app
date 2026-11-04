@@ -27,11 +27,13 @@ const markdown: [string, string][] = [
   ["### texto", "Titulo 3"],
   ["- texto  (o *)", "Lista con vinetas"],
   ["1. texto", "Lista numerada"],
+  ["[ ] texto", "Checklist"],
   ["> texto", "Cita"],
   ["**texto**", "Negrita"],
   ["*texto*", "Cursiva"],
   ["`texto`", "Codigo"],
   ["---", "Divisor"],
+  ["/", "Menú de bloques (tabla, fecha, desplegable...)"],
 ];
 
 export function ShortcutsHelp({ onClose }: { onClose: () => void }) {
@@ -71,7 +73,8 @@ export function ShortcutsHelp({ onClose }: { onClose: () => void }) {
 
         <p className={styles.note}>
           Tambien podes hacer <strong>clic derecho</strong> sobre el texto para
-          elegir un formato desde el menu.
+          elegir un formato desde el menu, o usar el boton <strong>+</strong> de
+          la barra para insertar bloques (checklist, fecha, desplegable...).
         </p>
       </div>
     </div>

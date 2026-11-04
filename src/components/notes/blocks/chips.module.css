@@ -1,0 +1,120 @@
+/* ---- Pastillas de Fecha y Desplegable (dentro del texto) ---- */
+.wrapper {
+  display: inline;
+}
+.wrap {
+  position: relative;
+  display: inline-block;
+  vertical-align: baseline;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.05em 0.55em;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+.chip:hover {
+  border-color: var(--color-ink-soft);
+}
+.dropdownChip {
+  background: var(--color-accent-soft);
+  border-color: transparent;
+  color: var(--color-accent);
+  font-weight: 500;
+}
+/* Pastilla seleccionada (p. ej. para borrarla con Supr). */
+:global(.ProseMirror-selectednode) .chip {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+/* Popover debajo de la pastilla. Fade de solo opacidad (ver PROYECTO.md). */
+.popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 50;
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-sm);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  white-space: nowrap;
+  animation: chipFade 0.12s ease both;
+}
+@keyframes chipFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.menu {
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 190px;
+}
+.input {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--color-line);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+.menu .input {
+  margin-top: var(--space-xs);
+}
+.smallBtn {
+  font-size: 0.85rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--color-line);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+.option {
+  display: flex;
+  align-items: center;
+}
+.optionBtn {
+  flex: 1;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.92rem;
+  color: var(--color-ink);
+}
+.optionBtn:hover {
+  background: var(--color-bg);
+}
+.optionActive {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+.removeBtn {
+  border: none;
+  background: none;
+  color: var(--color-ink-soft);
+  padding: 0 0.45rem;
+  font-size: 1rem;
+  opacity: 0;
+}
+.option:hover .removeBtn,
+.removeBtn:focus-visible {
+  opacity: 1;
+}
+/* En pantallas tactiles no hay hover: la × siempre visible. */
+@media (hover: none) {
+  .removeBtn { opacity: 0.7; }
+}

@@ -55,13 +55,42 @@ export function NoteEditor({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [menuOpen, setMenuOpen] = useState(false); // menu hamburguesa de acciones
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Cambios todavia no enviados (de UNA nota). Se acumulan: si editas el
+  // titulo y enseguida el texto, se mandan los dos juntos en vez de pisarse.
+  const pending = useRef<{ id: string; changes: NoteUpdate } | null>(null);
   // Ref al editor de texto para abrir el menu de formato desde el boton "Aa"
   // de la barra (asi el long-press queda libre para la seleccion nativa).
   const editorRef = useRef<EditorHandle>(null);
 
-  // Cuando cambia la nota seleccionada, sincronizamos los campos locales y
-  // reseteamos el indicador de guardado y el menu de acciones.
+  // Envia ya mismo lo pendiente (si hay).
+  const flushRef = useRef<() => void>(() => {});
+  flushRef.current = () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+    const p = pending.current;
+    pending.current = null;
+    if (p) void commitSave(p.id, p.changes);
+  };
+
+  // Si la app pasa a segundo plano (cambiar de app en el celu, cerrar la
+  // pestana), guardamos lo pendiente sin esperar el debounce.
   useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden") flushRef.current();
+    };
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", onHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", onHide);
+    };
+  }, []);
+
+  // Cuando cambia la nota seleccionada, primero guardamos lo pendiente de la
+  // anterior; despues sincronizamos los campos locales y reseteamos el
+  // indicador de guardado y el menu de acciones.
+  useEffect(() => {
+    flushRef.current();
     setTitle(note?.title ?? "");
     setKeywords(note?.keywords ?? "");
     setSaveStatus("idle");
@@ -85,12 +114,26 @@ export function NoteEditor({
 
   // Programa el guardado diferido (debounce). Desde que tipeas ya se ve
   // "Guardando..." y recien tras 600ms sin teclear se manda al server.
+  // Los cambios se ACUMULAN por nota; si lo pendiente era de otra nota, se
+  // envia primero (antes se descartaba al reiniciar el timer).
   function scheduleSave(changes: NoteUpdate) {
     if (!note) return;
+    if (pending.current && pending.current.id !== note.id) flushRef.current();
+    pending.current = { id: note.id, changes: { ...pending.current?.changes, ...changes } };
     setSaveStatus("saving");
     if (timer.current) clearTimeout(timer.current);
-    const id = note.id;
-    timer.current = setTimeout(() => void commitSave(id, changes), 600);
+    timer.current = setTimeout(() => flushRef.current(), 600);
+  }
+
+  // Al borrar la nota abierta, descartamos sus cambios pendientes (no tiene
+  // sentido guardar algo que se esta borrando).
+  function handleDelete(id: string) {
+    if (pending.current?.id === id) {
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = null;
+      pending.current = null;
+    }
+    onDelete(id);
   }
 
   // Sin nota seleccionada: pantalla de inicio (tambien al apretar Esc en una
@@ -133,6 +176,23 @@ export function NoteEditor({
         {/* Boton de formato: abre el menu sobre la seleccion. Solo en notas de
             texto (gastos/peso no tienen formato). En movil deja el long-press
             libre para la seleccion nativa. */}
+        {/* Boton "+": insertar bloque (checklist, fecha, desplegable...),
+            como en Claude Docs. Tambien se puede escribir "/" en el texto. */}
+        {esTexto && (
+          <Button
+            variant="ghost"
+            className={styles.formatBtn}
+            aria-label="Insertar bloque"
+            title="Insertar bloque (o escribí / en el texto)"
+            onClick={(e) => {
+              e.stopPropagation(); // que el clic que lo abre no lo cierre
+              editorRef.current?.openInsertMenu(e.currentTarget.getBoundingClientRect());
+            }}
+          >
+            +
+          </Button>
+        )}
+
         {esTexto && (
           <Button
             variant="ghost"
@@ -172,7 +232,7 @@ export function NoteEditor({
               onHelp={onShowHelp}
               onTogglePin={() => void commitSave(note.id, { pinned: !note.pinned })}
               onExport={() => onExport(note)}
-              onDelete={() => onDelete(note.id)}
+              onDelete={() => handleDelete(note.id)}
               onClose={() => setMenuOpen(false)}
             />
           )}

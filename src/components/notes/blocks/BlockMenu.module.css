@@ -1,0 +1,66 @@
+.menu {
+  width: 232px;
+  max-width: calc(100vw - 16px);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 6px;
+  /* Fade de solo opacidad (un transform romperia los position:fixed). */
+  animation: blockMenuFade 0.12s ease both;
+}
+@keyframes blockMenuFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.list {
+  max-height: min(440px, calc(100dvh - 120px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  text-align: left;
+  font-size: 0.93rem;
+  color: var(--color-ink);
+}
+.item svg {
+  color: var(--color-ink-soft);
+  flex-shrink: 0;
+}
+.itemActive {
+  background: var(--color-bg);
+}
+.empty {
+  padding: 6px 8px;
+  color: var(--color-ink-soft);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+.footer {
+  margin-top: 4px;
+  padding: 6px 8px 2px;
+  border-top: 1px solid var(--color-line);
+  color: var(--color-ink-soft);
+  font-size: 0.8rem;
+}
+
+/* Contenedor flotante (menu "/" junto al cursor y menu "+" bajo el boton). */
+.floating {
+  position: fixed;
+  z-index: 100;
+}
+/* Fondo atenuado cuando el menu "+" va centrado (movil). */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(32, 32, 29, 0.35);
+  z-index: 99;
+}

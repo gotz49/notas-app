@@ -39,6 +39,9 @@ Campos clave: `id`, `user_id`, `kind`, `title`, `content`, `pinned`, `keywords`,
 ### `nota` — texto enriquecido
 - `content` = **HTML** (no Markdown). Editor TipTap/StarterKit (`components/notes/Editor.tsx`); el Markdown es solo atajo al tipear.
 - **Formato**: menú con Negrita/Títulos/Listas/etc. (`ContextMenu` en `Editor.tsx`). Se abre con **clic derecho** (desktop) o el botón **Aa** de la barra (sobre todo móvil). En móvil el long-press queda libre para la **selección nativa** de Android (copiar/pegar del sistema); el botón Aa cierra ese popup nativo (`blur` + `removeAllRanges`, la selección la conserva ProseMirror) y aplica el formato sobre lo seleccionado. Los menús flotantes se **centran en pantalla** en móvil.
+- **Bloques (estilo Claude Docs)**: botón **+** de la barra o escribir **/** en el texto (al inicio de línea o tras un espacio) abre el menú de bloques: lista con viñetas, checklist, bloque de código, fecha, divisor, desplegable, títulos 1-3, lista numerada, cita; con **/** además Texto, Tabla e Imagen. El catálogo único vive en `components/notes/blocks/blocks.ts` (lo usan los dos menús). El menú **Aa** suma Checklist y, con el cursor en una tabla, agregar/borrar filas y columnas.
+  - **Fecha** y **Desplegable** son nodos propios (`blocks/DateChip.tsx`, `blocks/DropdownChip.tsx`): pastillas dentro del texto. En el HTML quedan como `<span data-type="date" data-value="YYYY-MM-DD">` y `<span data-type="dropdown" data-value="…" data-options='[…]'>`, con el texto visible adentro (así el export `.txt` lo muestra).
+  - Todo se guarda en el mismo `content` HTML: **no hay cambios de esquema**. Las notas viejas se leen y re-guardan idénticas (solo se agregaron extensiones).
 - **Imágenes**: no van en la base. Se suben al bucket público `imagenes` de Storage (comprimidas a WebP en el cliente), y en el HTML queda `<img src="url">`. Borrar la nota limpia sus imágenes (best-effort).
 - Tiene panel lateral de **keywords** (aclaraciones atadas a la nota).
 
@@ -56,7 +59,7 @@ Campos clave: `id`, `user_id`, `kind`, `title`, `content`, `pinned`, `keywords`,
 
 ## Funcionamiento clave
 
-- **Autosave** con debounce 600ms (`NoteEditor.tsx`). Updates **optimistas** en `useNotes` (mutan estado local antes de confirmar).
+- **Autosave** con debounce 600ms (`NoteEditor.tsx`). Los cambios pendientes se **acumulan por nota** (título + contenido + keywords juntos) y se envían antes de cambiar de nota o cuando la app pasa a segundo plano. Updates **optimistas** en `useNotes` (mutan estado local antes de confirmar).
 - **Realtime = recarga completa**: cualquier insert/update/delete dispara un `fetchNotes` entero (`subscribeToNotes`).
 - **Export**: el menú de acciones llama `onExport` (lo rutea `App.handleExport`). Nota normal → `.txt` y gastos → `.xls` van directo por `components/notes/exportNote.ts`; **peso → PNG** abre el modal `PesoExportDialog.tsx` (rango de fechas + gráfico).
 - **Gesto/botón atrás de Android** (`App.tsx`): al abrir una nota se mete una entrada de historial (`pushState`); el gesto de borde dispara `popstate` y vuelve al listado en vez de cerrar la PWA.
