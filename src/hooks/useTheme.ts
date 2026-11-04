@@ -18,6 +18,17 @@ type Theme = "light" | "dark";
 
 export const THEME_KEY = "tema-elegido";
 
+// Color de las barras del sistema (estado arriba / navegacion abajo en
+// Android, barra de titulo de la app instalada): el --color-surface de cada
+// tema, para que se fundan con la app. Mantener en sync con index.html y
+// con theme.css.
+const BAR_COLOR: Record<Theme, string> = { dark: "#232220", light: "#fbfaf6" };
+
+function applyTheme(theme: Theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", BAR_COLOR[theme]);
+}
+
 // Tema inicial: el que eligio el usuario, o oscuro por defecto.
 function getInitialTheme(): Theme {
   const saved = localStorage.getItem(THEME_KEY);
@@ -27,9 +38,9 @@ function getInitialTheme(): Theme {
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
-  // Cada vez que cambia el tema, lo aplicamos al <html>.
+  // Cada vez que cambia el tema, lo aplicamos al <html> y a las barras.
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
+    applyTheme(theme);
   }, [theme]);
 
   // Cambiar a mano: se aplica y se recuerda la eleccion.
