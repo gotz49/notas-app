@@ -74,7 +74,7 @@ function tablaLista(lista: GastoLista, cotizacionUSD: number): string {
       <tr>
         <td style="text-align:center">${r.pagado ? "Sí" : "No"}</td>
         <td>${esc(r.concepto)}${esc(usd)}</td>
-        <td style="text-align:center;mso-number-format:'\@'">${cuota}</td>
+        <td style="text-align:center;mso-number-format:'\\@'">${cuota}</td>
         <td class="num">${neto(r, cotizacionUSD)}</td>
       </tr>`;
     })
