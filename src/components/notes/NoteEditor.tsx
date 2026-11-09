@@ -285,7 +285,11 @@ function NotePanel({
                 (fieldset disabled) y el editor de texto en solo lectura. */}
             {esGastos ? (
               <fieldset className={styles.fieldset} disabled={readOnly}>
-                <GastosEditor content={note.content} onChange={(json) => save({ content: json })} />
+                <GastosEditor
+                  content={note.content}
+                  onChange={(json) => save({ content: json })}
+                  readOnly={readOnly}
+                />
               </fieldset>
             ) : esPeso ? (
               <fieldset className={styles.fieldset} disabled={readOnly}>

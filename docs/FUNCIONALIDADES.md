@@ -20,7 +20,7 @@ lado, el archivo principal (detalle en [MAPA_DE_ARCHIVOS.md](MAPA_DE_ARCHIVOS.md
 | Tipo | Qué es | Editor |
 |---|---|---|
 | 📝 **Nota** | Texto enriquecido con bloques, imágenes y panel de keywords. | `notes/Editor.tsx` |
-| 💲 **Lista de gastos** | Varias listas con ✓ pagado · concepto · monto, subtotales y total general. | `notes/GastosEditor.tsx` |
+| 💲 **Lista de gastos** | Gastos del mes: varias listas con ✓ pagado · concepto · monto, ingresos y gastos, cuotas que avanzan solas, montos en US$, vencimientos, resumen (saldo y falta pagar), **Cerrar mes** con historial y gráfico de meses anteriores. | `notes/GastosEditor.tsx`, `notes/gastos/` |
 | ⚖️ **Registro de peso** | Un peso por fecha; listado editable. Se exporta como imagen con gráfico. | `notes/PesoEditor.tsx` |
 
 Se crean con **+ Nueva** y el tipo no cambia después.

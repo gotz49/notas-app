@@ -7,6 +7,7 @@
 // ============================================================
 import type { Note, RemoteNoteChange } from "../types";
 import { normalize, toPlainText } from "./text";
+import { textoBuscableGastos } from "../lib/gastos";
 
 // ---------- Versiones (updated_at) ----------
 // Postgres guarda microsegundos ("2026-11-04T10:00:00.123456+00:00")
@@ -77,7 +78,7 @@ export function selectVisibleNotes(notes: Note[], view: NotesView, query: string
   const inView = notes.filter((n) => (view === "trash" ? n.deleted_at !== null : n.deleted_at === null));
   const matching = q
     ? inView.filter((n) =>
-        normalize(`${n.title} ${toPlainText(n.content)} ${n.keywords}`).includes(q)
+        normalize(`${n.title} ${textoBuscable(n)} ${n.keywords}`).includes(q)
       )
     : inView;
 
@@ -86,6 +87,13 @@ export function selectVisibleNotes(notes: Note[], view: NotesView, query: string
     if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
     return compareDesc(a.updated_at, b.updated_at);
   });
+}
+
+// Texto del contenido para buscar. Las notas de gastos guardan JSON: se
+// busca solo en titulos de listas y conceptos, no en las claves del JSON.
+function textoBuscable(n: Note): string {
+  if (n.kind === "gastos") return textoBuscableGastos(n.content);
+  return toPlainText(n.content);
 }
 
 // Orden descendente (mas nuevo primero); los valores vacios van al final.

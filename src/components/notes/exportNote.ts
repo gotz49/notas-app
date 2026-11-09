@@ -5,17 +5,20 @@
 //   - nota normal -> .txt: el HTML del cuerpo pasado a texto plano,
 //     con el titulo arriba.
 //   - nota de gastos -> .xls: una planilla con una tabla por lista
-//     (concepto, monto, pagado), subtotales y total general ya
-//     calculados. Es un .xls "sin dependencias": un documento HTML
+//     (pagado, concepto, cuota, monto), subtotales, el resumen del mes
+//     (ingresos, gastos, saldo) y el historial de meses cerrados. Es un .xls "sin dependencias": un documento HTML
 //     que Excel/Sheets abren como planilla con columnas reales.
 //  Se usa desde el menu de acciones (editor y clic derecho de la lista).
 // ============================================================
-import type { GastoLista, Note } from "../../types";
+import type { GastoLista, Note, ResumenMes } from "../../types";
 import {
+  esMesValido,
   formatMonto,
+  neto,
+  nombreMes,
   parseGastos,
+  resumen,
   subtotalLista,
-  totalGeneral,
 } from "../../lib/gastos";
 
 export function exportNote(note: Note) {
@@ -59,17 +62,22 @@ function esc(s: string): string {
     .replace(/>/g, "&gt;");
 }
 
-// Una tabla por lista: encabezado, renglones y fila de subtotal.
-function tablaLista(lista: GastoLista): string {
+// Una tabla por lista: encabezado, renglones y fila de subtotal. El monto va
+// en moneda local con signo (los ingresos en negativo, igual que el subtotal);
+// si el renglon es en dolares, el original queda anotado en el concepto.
+function tablaLista(lista: GastoLista, cotizacionUSD: number): string {
   const filas = lista.renglones
-    .map(
-      (r) => `
+    .map((r) => {
+      const usd = r.moneda === "USD" ? ` (US$ ${formatMonto(Math.abs(r.monto))})` : "";
+      const cuota = r.cuota ? `${r.cuota.actual}/${r.cuota.total}` : "";
+      return `
       <tr>
         <td style="text-align:center">${r.pagado ? "Sí" : "No"}</td>
-        <td>${esc(r.concepto)}</td>
-        <td class="num">${r.monto || 0}</td>
-      </tr>`
-    )
+        <td>${esc(r.concepto)}${esc(usd)}</td>
+        <td style="text-align:center;mso-number-format:'\@'">${cuota}</td>
+        <td class="num">${neto(r, cotizacionUSD)}</td>
+      </tr>`;
+    })
     .join("");
 
   return `
@@ -78,20 +86,49 @@ function tablaLista(lista: GastoLista): string {
       <tr>
         <th>Pagado</th>
         <th>Concepto</th>
+        <th>Cuota</th>
         <th>Monto</th>
       </tr>
       ${filas}
       <tr class="subtotal">
         <td></td>
         <td>Subtotal</td>
-        <td class="num">${subtotalLista(lista)}</td>
+        <td></td>
+        <td class="num">${subtotalLista(lista, cotizacionUSD)}</td>
       </tr>
+    </table>`;
+}
+
+// Tabla con el historial de meses cerrados (del mas nuevo al mas viejo).
+function tablaHistorial(historial: ResumenMes[]): string {
+  if (historial.length === 0) return "";
+  const filas = [...historial]
+    .reverse()
+    .map(
+      (h) => `
+      <tr>
+        <td>${esc(nombreMes(h.mes))}</td>
+        <td class="num">${h.ingresos}</td>
+        <td class="num">${h.gastos}</td>
+        <td class="num">${h.saldo}</td>
+      </tr>`
+    )
+    .join("");
+  return `
+    <h2>Historial</h2>
+    <table>
+      <tr><th>Mes</th><th>Ingresos</th><th>Gastos</th><th>Saldo</th></tr>
+      ${filas}
     </table>`;
 }
 
 function exportGastos(note: Note) {
   const data = parseGastos(note.content);
-  const tablas = data.listas.map(tablaLista).join("");
+  const cot = data.cotizacionUSD ?? 0;
+  const tablas = data.listas.map((l) => tablaLista(l, cot)).join("");
+  const res = resumen(data);
+  const mes = esMesValido(data.mes) ? ` — ${nombreMes(data.mes)}` : "";
+  const cotizacion = cot > 0 ? `<p>Cotización: US$ 1 = ${formatMonto(cot)}</p>` : "";
 
   // Documento HTML que Excel reconoce como planilla. La clase .num usa
   // mso-number-format para que los montos se muestren con 2 decimales y
@@ -109,9 +146,15 @@ function exportGastos(note: Note) {
   </style>
 </head>
 <body>
-  <h1>${esc(note.title || "Gastos")}</h1>
+  <h1>${esc(note.title || "Gastos")}${esc(mes)}</h1>
+  ${cotizacion}
   ${tablas}
-  <p class="total">Total general: ${formatMonto(totalGeneral(data))}</p>
+  <p class="total">${
+    res.ingresos > 0
+      ? `Ingresos: ${formatMonto(res.ingresos)} · Gastos: ${formatMonto(res.gastos)} · Saldo: ${formatMonto(res.saldo)}`
+      : `Total gastos: ${formatMonto(res.gastos)}`
+  } · Falta pagar: ${formatMonto(res.pendiente)}</p>
+  ${tablaHistorial(data.historial ?? [])}
 </body>
 </html>`;
 
