@@ -49,7 +49,11 @@ Campos clave: `id`, `user_id`, `kind`, `title`, `content`, `pinned`, `keywords`,
 ### `gastos` — listas de gastos (feature de jun-2026)
 - `content` = **JSON** con forma `GastosData`: varias **listas**, cada una con renglones `{ pagado, concepto, monto }`. Tipos y helpers en `src/types/index.ts` y `src/lib/gastos.ts`.
 - Se crea desde **+ Nueva → 💲 Lista de gastos**; se distingue con 💲 en la lista.
-- Editor: `components/notes/GastosEditor.tsx` — tabla **✓ pagado · concepto · monto**, agregar/borrar renglones y listas, **subtotal por lista** y **total general**. Pagado = renglón tachado.
+- Editor: `components/notes/GastosEditor.tsx` — tabla **✓ pagado · concepto · monto**, agregar/borrar renglones y listas, **subtotal por lista** y **saldo**. Pagado = renglón tachado.
+- **Gestión mensual (nov-2026)**: la nota tiene un **mes** (`‹ Noviembre 2026 ›`) y un **resumen** (ingresos · gastos · saldo · falta pagar). Cada renglón tiene un menú **⋯** (`gastos/RenglonOpciones.tsx`): **gasto/ingreso**, **cuota** (5 de 12), **solo este mes** y **US$** (se convierte con la cotización del mes). Cada lista puede tener **día de vencimiento** (avisa los próximos 5 días).
+- **Cerrar mes** (`cerrarMes` en `lib/gastos.ts`, vista previa en `gastos/CerrarMesDialog.tsx`): guarda un `ResumenMes` en `historial`, destilda todo, avanza cuotas, borra las terminadas y las de "solo este mes", y pasa al mes siguiente. Ofrece **Deshacer**. El **historial** (`gastos/GastosHistorial.tsx`) muestra un gráfico de 12 meses y el detalle por lista; cada lista compara su subtotal contra el último mes cerrado.
+- **Compatibilidad**: todos los campos nuevos son opcionales. Un monto negativo sin `tipo` (formato viejo) cuenta como ingreso, así los totales viejos no cambian. Un aviso ofrece convertir las cuotas escritas en el texto ("Pixel 5/12") y los negativos al formato nuevo.
+- Todo vive en `content` (JSON): no hubo cambios en `schema.sql` ni en los servicios.
 - Sin keywords ni imágenes.
 
 ### `peso` — registro diario de peso (feature de jun-2026)

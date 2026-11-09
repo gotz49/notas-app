@@ -1,5 +1,28 @@
 # Registro de cambios
 
+## 0.3.0 — 2026-11-09 · Gastos mensuales
+
+Las notas de gastos pasan a ser una hoja de **gastos del mes**. Todo se guarda
+en el mismo JSON de `content`: **no hay que tocar Supabase** (ni `schema.sql`
+ni los servicios). Las notas existentes se abren igual y sus totales no cambian.
+
+- **Mes de la nota** (`‹ Noviembre 2026 ›`) y **resumen**: ingresos · gastos ·
+  saldo · falta pagar. El total de abajo pasa a ser el **saldo** (ingresos −
+  gastos): lo que antes daba `-140` ahora se ve como `140,00` en verde.
+- **Menú ⋯ por renglón**: gasto o **ingreso** (se carga en positivo), **cuota**
+  (5 de 12), **solo este mes**, **US$** con cotización del mes.
+- **Día de vencimiento por lista**, con aviso desde 5 días antes si falta pagar algo.
+- **Cerrar mes**: muestra qué va a pasar, guarda un resumen en el **historial**,
+  destilda, avanza cuotas, borra las terminadas y las de "solo este mes" y pasa
+  al mes siguiente. Se puede **deshacer**.
+- **Historial**: gráfico de ingresos vs gastos (12 meses), tabla con detalle por
+  lista, y cada lista muestra la diferencia contra el último mes cerrado.
+- **Convertir formato viejo**: un aviso ofrece pasar "Pixel 5/12" a cuota y los
+  montos negativos a ingresos (sin cambiar los totales).
+- Export `.xls` con cuota, US$, resumen e historial.
+- *`lib/gastos.ts` (+ `gastos-mes.test.ts`), `types/index.ts`,
+  `components/notes/GastosEditor.tsx`, `components/notes/gastos/`, `exportNote.ts`.*
+
 ## 0.2.0 — 2026-11-04 · Guardado confiable, conflictos, papelera y mantenibilidad
 
 Resultado de una revisión de funcionalidad, seguridad y buenas prácticas,

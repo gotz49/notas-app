@@ -1,0 +1,136 @@
+/* ---- Popover de opciones de un renglon de gastos ---- */
+.wrap {
+  position: relative;
+  display: inline-block;
+}
+.trigger {
+  background: none;
+  border: none;
+  color: var(--color-ink-soft);
+  font-size: 1rem;
+  line-height: 1;
+  padding: var(--space-xs);
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0.6;
+}
+.trigger:hover,
+.triggerOpen {
+  opacity: 1;
+  background: var(--color-bg);
+  color: var(--color-accent);
+}
+
+.popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 50;
+  width: 260px;
+  max-width: calc(100vw - 2 * var(--space-md));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  text-align: left;
+  font-size: 0.9rem;
+  color: var(--color-ink);
+}
+
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.etiqueta {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-ink-soft);
+  font-weight: 600;
+}
+.ayuda {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--color-ink-soft);
+}
+
+.error {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--color-danger);
+}
+
+/* Gasto | Ingreso */
+.segmentado {
+  display: flex;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.segmentado button {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--color-ink-soft);
+  font-size: 0.88rem;
+  padding: var(--space-xs) var(--space-sm);
+  cursor: pointer;
+}
+.segmentado button + button {
+  border-left: 1px solid var(--color-line);
+}
+.segmentado .activo {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+/* 5 de 12 */
+.cuota {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--color-ink-soft);
+}
+.cuota input {
+  width: 56px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: var(--space-xs) var(--space-sm);
+  text-align: center;
+}
+.cuota input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+.quitar {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--color-ink-soft);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.quitar:hover {
+  color: var(--color-danger);
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  cursor: pointer;
+}
+.check input {
+  margin-top: 3px;
+  accent-color: var(--color-accent);
+}

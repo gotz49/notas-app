@@ -48,21 +48,46 @@ export type RemoteNoteChange =
 // "Tarjetas"); cada lista tiene renglones con un check de pagado, el
 // concepto y el monto. Esto se serializa a JSON y se guarda en `content`.
 
+// Todos los campos nuevos son OPCIONALES: las notas viejas (sin ellos) se
+// leen igual. Ver la logica en lib/gastos.ts.
+
 export type GastoRenglon = {
   id: string;
-  pagado: boolean; // tildado cuando ya lo pagaste
+  pagado: boolean; // tildado cuando ya lo pagaste (o cobraste, si es ingreso)
   concepto: string; // descripcion del gasto
-  monto: number; // importe (0 si esta vacio)
+  // Importe (0 si esta vacio). En un "ingreso" se guarda positivo. En notas
+  // viejas un gasto con monto negativo se cuenta como ingreso (compatibilidad).
+  monto: number;
+  tipo?: "gasto" | "ingreso"; // sin tipo = gasto
+  cuota?: { actual: number; total: number }; // p. ej. 5/12; avanza al cerrar el mes
+  soloEsteMes?: boolean; // se borra al cerrar el mes (gasto de una sola vez)
+  moneda?: "USD"; // sin moneda = moneda local; USD se convierte con la cotizacion
 };
 
 export type GastoLista = {
   id: string;
   titulo: string;
   renglones: GastoRenglon[];
+  vence?: number; // dia del mes en que vence el pago (1-31), p. ej. tarjetas
+};
+
+// Resumen de un mes cerrado, guardado en el historial de la nota.
+export type ResumenMes = {
+  mes: string; // 'YYYY-MM'
+  ingresos: number; // en moneda local, positivo
+  gastos: number; // en moneda local, positivo
+  saldo: number; // ingresos - gastos
+  pendiente: number; // gastos que quedaron sin pagar al cerrar
+  listas: { titulo: string; ingresos: number; gastos: number }[];
+  cerradoEl: string; // fecha ISO del cierre
 };
 
 export type GastosData = {
   listas: GastoLista[];
+  mes?: string; // 'YYYY-MM': mes que representa la nota hoy
+  cotizacionUSD?: number; // cuantos pesos vale 1 USD este mes
+  historial?: ResumenMes[]; // meses cerrados, del mas viejo al mas nuevo
+  ocultarConversion?: boolean; // el usuario descarto el aviso de "convertir formato viejo"
 };
 
 // ----- Notas de peso -------------------------------------------

@@ -50,7 +50,7 @@ Qué hace cada archivo y cuándo tocarlo. Cómo se conectan:
 | Archivo | Qué hace | Test |
 |---|---|---|
 | `lib/supabase.ts` | El único cliente de Supabase. | — |
-| `lib/gastos.ts` | Leer/escribir el JSON de gastos, subtotales, total, formato de montos. | `gastos-peso.test.ts` |
+| `lib/gastos.ts` | Leer/escribir el JSON de gastos, ingresos/gastos, USD, subtotales y resumen, cuotas (y convertir el formato viejo), **cerrar mes**, historial, comparación con el mes anterior y vencimientos. | `gastos-peso.test.ts`, `gastos-mes.test.ts` |
 | `lib/peso.ts` | Leer/escribir el JSON de peso, ordenar y filtrar por fecha, formatos. | `gastos-peso.test.ts` |
 | `lib/pesoChart.ts` | Dibuja el gráfico de peso en un `<canvas>` (para exportar PNG). | — |
 
@@ -89,10 +89,13 @@ Qué hace cada archivo y cuándo tocarlo. Cómo se conectan:
 | `NoteEditor.tsx` (+ `.module.css`) | **Contenedor** de la nota abierta (avisos de papelera y conflicto, adopción de versiones remotas) + `NotePanel` (barra, título, editor según `kind`, keywords) + `SaveIndicator`. |
 | `NoteActionsMenu.tsx` | Menú de acciones (Keywords, Atajos, Fijar, Exportar, Mover a la papelera), en ☰ y clic derecho. |
 | `Editor.tsx` (+ `.module.css`) | Editor TipTap de notas de texto: extensiones, menú de formato (clic derecho / Aa), menú "+", comando "/", imágenes (pegar, arrastrar, elegir). Prop `editable`. |
-| `GastosEditor.tsx` (+ css) | Listas de gastos: pagado / concepto / monto, subtotales y total. |
+| `GastosEditor.tsx` (+ css) | Gastos del mes: barra del mes, resumen, avisos (vencimientos, convertir formato viejo, deshacer cierre), listas y saldo. |
+| `gastos/RenglonOpciones.tsx` (+ css) | Menú ⋯ de un renglón: gasto/ingreso, cuota, solo este mes, US$. |
+| `gastos/CerrarMesDialog.tsx` (+ css) | Vista previa y confirmación de "Cerrar mes". |
+| `gastos/GastosHistorial.tsx` (+ css) | Historial de meses cerrados: gráfico SVG y tabla con detalle por lista. |
 | `PesoEditor.tsx` (+ css) | Registro de peso: alta por fecha y listado editable. |
 | `PesoExportDialog.tsx` (+ css) | Exportar peso como PNG con gráfico y rango de fechas. |
-| `exportNote.ts` | Exportar nota de texto (.txt) o gastos (.xls). |
+| `exportNote.ts` | Exportar nota de texto (.txt) o gastos (.xls, con resumen e historial). |
 | `ShortcutsHelp.tsx` (+ css) | Modal con los atajos de teclado. |
 | `blocks/blocks.ts` | **Catálogo de bloques** para "+" y "/". |
 | `blocks/DateChip.tsx`, `blocks/DropdownChip.tsx` | Bloques Fecha y Desplegable (nodos TipTap con vista React). |
